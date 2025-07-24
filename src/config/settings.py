@@ -44,7 +44,7 @@ CHUNK_OVERLAP = 200  # Overlap between chunks
 
 # Transcription Settings
 USE_WHISPER = True  # Use open-source Whisper by default
-WHISPER_MODEL = "base"  # Whisper model size: tiny, base, small, medium, large
+WHISPER_MODEL = "medium"  # Whisper model size: tiny, base, small, medium, large
 
 # Demo Mode Settings
 DEMO_MODE = os.getenv("DEMO_MODE", "False").lower() == "true"
