@@ -22,7 +22,10 @@ That's it! See the demo output showing how insights are extracted.
 git clone <repo-url>
 cd video-transcript
 
-# Install Python dependencies
+# Install all dependencies (including ffmpeg)
+./install_dependencies.sh
+
+# Or install manually:
 pip install -r requirements.txt
 
 # Copy environment config (optional - works without it!)

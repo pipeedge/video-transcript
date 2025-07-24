@@ -242,13 +242,15 @@ Please respond in the format: "START: [seconds] END: [seconds]" or "NOT FOUND" i
                     continue
                 
                 # Check if line is a category header
+                is_category = False
                 for category in categories:
                     if category.lower() in line.lower() and ':' in line:
                         current_category = category
+                        is_category = True
                         break
                 
                 # Check if line is an insight (starts with -)
-                elif line.startswith('-') and current_category:
+                if not is_category and line.startswith('-') and current_category:
                     insight = line[1:].strip()
                     if insight:
                         insights[current_category].append(insight)

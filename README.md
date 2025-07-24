@@ -59,7 +59,14 @@ cd video-transcript
 
 2. **Install dependencies**:
 ```bash
+# Option 1: Auto-install everything (recommended)
+./install_dependencies.sh
+
+# Option 2: Manual install
 pip install -r requirements.txt
+
+# Option 3: Check what's missing first
+python3 check_dependencies.py
 ```
 
 3. **Set up environment variables** (optional):

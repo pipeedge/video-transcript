@@ -7,6 +7,7 @@ python-dotenv==1.0.0
 # Audio processing
 pydub==0.25.1
 librosa==0.10.2
+ffmpeg-python==0.2.0
 
 # Transcription (Open Source)
 openai-whisper==20231117
