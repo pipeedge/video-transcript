@@ -90,6 +90,14 @@ class YouTubeDownloader:
                 'quiet': True,
                 'extract_flat': True,  # Only get video list, don't download
                 'ignoreerrors': True,
+                'sleep_interval': 1,  # Sleep between requests
+                'max_sleep_interval': 5,
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['android', 'web'],  # Try different clients
+                        'skip': ['hls', 'dash']  # Skip complex formats
+                    }
+                }
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -142,7 +150,14 @@ class YouTubeDownloader:
                 return videos
                 
         except Exception as e:
-            logger.error(f"Error processing channel with yt-dlp: {e}")
+            error_msg = str(e)
+            if "Sign in to confirm you're not a bot" in error_msg:
+                logger.error("YouTube is blocking automated access (bot detection)")
+                logger.info("Try again later, use a VPN, or process local audio files")
+                logger.info("For demo purposes, run: python demo_data.py && python example.py")
+            else:
+                logger.error(f"Error processing channel with yt-dlp: {e}")
+            
             # Fallback to pytube method
             return self._process_channel_with_pytube(channel_url, max_videos)
     
