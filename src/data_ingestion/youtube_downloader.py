@@ -127,26 +127,21 @@ class YouTubeDownloader:
     def _process_single_video(self, video_url: str) -> List[VideoInfo]:
         """Process a single video URL with anti-bot measures"""
         
-        # Anti-bot configuration for single videos
+        # Web client configuration for terminal/server environments
         ydl_opts = {
             'quiet': True,
-            'retries': 5,
-            'sleep_interval': 2,
+            'retries': 3,
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Accept-Encoding': 'gzip, deflate, br',
                 'Connection': 'keep-alive',
                 'Upgrade-Insecure-Requests': '1',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Sec-Fetch-User': '?1',
             },
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android'],  # Android client works best
+                    'player_client': ['web'],  # Use web client for terminal
                     'skip': ['hls', 'dash'],
                 }
             }
@@ -176,89 +171,42 @@ class YouTubeDownloader:
     def _process_channel_with_ytdlp(self, channel_url: str, max_videos: Optional[int] = None) -> List[VideoInfo]:
         """Process a channel URL using yt-dlp with multiple anti-bot strategies"""
         
-        # Multiple configurations to try (like MFM Vault approach)
+        # Terminal-optimized configurations (prioritize web client)
         configs = [
-            # Strategy 1: Android client (most successful)
-            {
-                'name': 'Android client',
-                'opts': {
-                    'quiet': True,
-                    'extract_flat': True,
-                    'ignoreerrors': True,
-                    'sleep_interval': 2,
-                    'max_sleep_interval': 8,
-                    'retries': 3,
-                    'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                        'Accept-Encoding': 'gzip, deflate, br',
-                        'Connection': 'keep-alive',
-                        'Upgrade-Insecure-Requests': '1',
-                        'Sec-Fetch-Dest': 'document',
-                        'Sec-Fetch-Mode': 'navigate',
-                        'Sec-Fetch-Site': 'none',
-                        'Sec-Fetch-User': '?1',
-                    },
-                    'extractor_args': {
-                        'youtube': {
-                            'player_client': ['android'],
-                            'skip': ['hls', 'dash'],
-                        }
-                    }
-                }
-            },
-            # Strategy 2: iOS client
-            {
-                'name': 'iOS client',
-                'opts': {
-                    'quiet': True,
-                    'extract_flat': True,
-                    'ignoreerrors': True,
-                    'sleep_interval': 3,
-                    'retries': 3,
-                    'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.5',
-                        'Accept-Encoding': 'gzip, deflate, br',
-                        'Connection': 'keep-alive',
-                    },
-                    'extractor_args': {
-                        'youtube': {
-                            'player_client': ['ios'],
-                            'skip': ['hls', 'dash'],
-                        }
-                    }
-                }
-            },
-            # Strategy 3: Web client with different headers
+            # Strategy 1: Web client (best for terminal/server)
             {
                 'name': 'Web client',
                 'opts': {
                     'quiet': True,
                     'extract_flat': True,
                     'ignoreerrors': True,
-                    'sleep_interval': 4,
                     'retries': 2,
                     'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                         'Accept-Language': 'en-US,en;q=0.9',
                         'Accept-Encoding': 'gzip, deflate, br',
                         'Connection': 'keep-alive',
                         'Upgrade-Insecure-Requests': '1',
-                        'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-                        'Sec-Ch-Ua-Mobile': '?0',
-                        'Sec-Ch-Ua-Platform': '"Windows"',
-                        'Sec-Fetch-Dest': 'document',
-                        'Sec-Fetch-Mode': 'navigate',
-                        'Sec-Fetch-Site': 'none',
-                        'Sec-Fetch-User': '?1',
                     },
                     'extractor_args': {
                         'youtube': {
                             'player_client': ['web'],
+                            'skip': ['hls', 'dash'],
+                        }
+                    }
+                }
+            },
+            # Strategy 2: Minimal config
+            {
+                'name': 'Minimal config',
+                'opts': {
+                    'quiet': True,
+                    'extract_flat': True,
+                    'ignoreerrors': True,
+                    'retries': 1,
+                    'extractor_args': {
+                        'youtube': {
                             'skip': ['hls', 'dash'],
                         }
                     }
@@ -370,7 +318,7 @@ class YouTubeDownloader:
     
     def download_audio(self, video_info: VideoInfo) -> Optional[Path]:
         """
-        Download and extract audio from a YouTube video
+        Download and extract audio from a YouTube video with PO token fallback
         
         Args:
             video_info: VideoInfo object containing video details
@@ -387,42 +335,138 @@ class YouTubeDownloader:
                 logger.info(f"Audio already exists: {audio_path}")
                 return audio_path
             
-            # Download using yt-dlp with anti-bot configuration
-            download_opts = {
-                'format': 'bestaudio/best',
-                'extractaudio': True,
-                'audioformat': 'mp3',
-                'audioquality': '192K',
-                'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
-                'quiet': True,
-                'no_warnings': True,
-                'retries': 5,
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'Connection': 'keep-alive',
+            # Multiple download strategies (ordered by reliability)
+            download_strategies = [
+                # Strategy 1: Web client without PO token (works for older/public videos)
+                {
+                    'name': 'Web client (no PO token)',
+                    'opts': {
+                        'format': 'bestaudio/best',
+                        'extractaudio': True,
+                        'audioformat': 'mp3',
+                        'audioquality': '192K',
+                        'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
+                        'quiet': True,
+                        'no_warnings': True,
+                        'retries': 2,
+                        'extractor_args': {
+                            'youtube': {
+                                'player_client': ['web'],
+                                'skip': ['hls', 'dash'],
+                            }
+                        }
+                    }
                 },
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['android'],
-                        'skip': ['hls', 'dash'],
-                        'formats': 'missing_pot',  # Enable formats that might be missing PO token
+                # Strategy 2: Mobile web client (sometimes bypasses PO token requirement)
+                {
+                    'name': 'Mobile web client',
+                    'opts': {
+                        'format': 'bestaudio/best',
+                        'extractaudio': True,
+                        'audioformat': 'mp3',
+                        'audioquality': '192K',
+                        'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
+                        'quiet': True,
+                        'no_warnings': True,
+                        'retries': 2,
+                        'http_headers': {
+                            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+                        },
+                        'extractor_args': {
+                            'youtube': {
+                                'player_client': ['mweb'],
+                                'skip': ['hls', 'dash'],
+                            }
+                        }
+                    }
+                },
+                # Strategy 3: Android client (alternative for PO token issues)
+                {
+                    'name': 'Android client',
+                    'opts': {
+                        'format': 'bestaudio/best',
+                        'extractaudio': True,
+                        'audioformat': 'mp3',
+                        'audioquality': '192K',
+                        'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
+                        'quiet': True,
+                        'no_warnings': True,
+                        'retries': 2,
+                        'extractor_args': {
+                            'youtube': {
+                                'player_client': ['android'],
+                                'skip': ['hls', 'dash'],
+                            }
+                        }
+                    }
+                },
+                # Strategy 4: Basic fallback (lowest quality but most reliable)
+                {
+                    'name': 'Basic fallback',
+                    'opts': {
+                        'format': 'worst[ext=mp4]/worst',
+                        'extractaudio': True,
+                        'audioformat': 'mp3',
+                        'audioquality': '128K',
+                        'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
+                        'quiet': True,
+                        'no_warnings': True,
+                        'retries': 1,
+                        'extractor_args': {
+                            'youtube': {
+                                'skip': ['hls', 'dash'],
+                            }
+                        }
                     }
                 }
-            }
+            ]
             
-            with yt_dlp.YoutubeDL(download_opts) as ydl:
-                ydl.download([str(video_info.url)])
+            # Try each strategy
+            for strategy in download_strategies:
+                try:
+                    logger.info(f"Trying {strategy['name']} for audio download")
+                    
+                    with yt_dlp.YoutubeDL(strategy['opts']) as ydl:
+                        ydl.download([str(video_info.url)])
+                    
+                    # Check for various possible output formats
+                    possible_paths = [
+                        self.audio_dir / f"{video_info.video_id}.mp3",
+                        self.audio_dir / f"{video_info.video_id}.m4a",
+                        self.audio_dir / f"{video_info.video_id}.webm",
+                        self.audio_dir / f"{video_info.video_id}.opus",
+                    ]
+                    
+                    for path in possible_paths:
+                        if path.exists():
+                            # Convert to mp3 if needed
+                            if path.suffix != '.mp3':
+                                mp3_path = path.with_suffix('.mp3')
+                                logger.info(f"Converting {path} to MP3")
+                                audio = AudioSegment.from_file(str(path))
+                                audio.export(str(mp3_path), format="mp3", bitrate="192k")
+                                path.unlink()  # Remove original file
+                                path = mp3_path
+                            
+                            logger.info(f"Successfully downloaded audio with {strategy['name']}: {path}")
+                            return path
+                    
+                    logger.warning(f"{strategy['name']} completed but no audio file found")
+                    
+                except Exception as e:
+                    error_msg = str(e)
+                    if "Sign in to confirm you're not a bot" in error_msg:
+                        logger.warning(f"{strategy['name']} failed: Bot detection")
+                    elif "requires a PO token" in error_msg or "PO token" in error_msg:
+                        logger.warning(f"{strategy['name']} failed: PO token required")
+                    else:
+                        logger.warning(f"{strategy['name']} failed: {error_msg[:100]}")
+                    continue
             
-            # Verify the file was created
-            if audio_path.exists():
-                logger.info(f"Successfully downloaded audio: {audio_path}")
-                return audio_path
-            else:
-                logger.error(f"Audio file not found after download: {audio_path}")
-                return None
+            # If all strategies fail, provide helpful message
+            logger.error(f"All download strategies failed for {video_info.video_id}")
+            logger.info("This video may require a PO token. Try using a different video or implement PO token extraction.")
+            return None
                 
         except Exception as e:
             logger.error(f"Error downloading audio for {video_info.video_id}: {e}")
