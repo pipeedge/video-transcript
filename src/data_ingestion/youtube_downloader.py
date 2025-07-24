@@ -53,11 +53,76 @@ class YouTubeDownloader:
             
             # Otherwise treat as channel URL
             logger.info("Treating as channel URL")
-            return self._process_channel_with_ytdlp(url, max_videos)
+            
+            # Try different URL formats
+            channel_urls = self._get_channel_url_variants(url)
+            
+            for channel_url in channel_urls:
+                try:
+                    logger.info(f"Trying channel URL format: {channel_url}")
+                    return self._process_channel_with_ytdlp(channel_url, max_videos)
+                except Exception as e:
+                    logger.warning(f"Failed with URL {channel_url}: {str(e)[:100]}...")
+                    continue
+            
+            # If all formats fail
+            raise Exception("All channel URL formats failed")
             
         except Exception as e:
             logger.error(f"Error processing URL: {e}")
             return []
+    
+    def _get_channel_url_variants(self, url: str) -> List[str]:
+        """Generate different channel URL formats to try"""
+        variants = [url]  # Start with original URL
+        
+        # Extract channel handle/name/ID from different formats
+        if '@' in url:
+            # Format: https://www.youtube.com/@ChannelName
+            handle = url.split('@')[-1].split('/')[0].split('?')[0]
+            variants.extend([
+                f"https://www.youtube.com/@{handle}",
+                f"https://www.youtube.com/@{handle}/videos",
+                f"https://www.youtube.com/c/{handle}",
+                f"https://www.youtube.com/c/{handle}/videos",
+                f"https://www.youtube.com/user/{handle}",
+                f"https://www.youtube.com/user/{handle}/videos",
+            ])
+        elif '/c/' in url:
+            # Format: https://www.youtube.com/c/ChannelName
+            channel_name = url.split('/c/')[-1].split('/')[0].split('?')[0]
+            variants.extend([
+                f"https://www.youtube.com/c/{channel_name}",
+                f"https://www.youtube.com/c/{channel_name}/videos",
+                f"https://www.youtube.com/@{channel_name}",
+                f"https://www.youtube.com/user/{channel_name}",
+            ])
+        elif '/channel/' in url:
+            # Format: https://www.youtube.com/channel/UCxxxxx
+            channel_id = url.split('/channel/')[-1].split('/')[0].split('?')[0]
+            variants.extend([
+                f"https://www.youtube.com/channel/{channel_id}",
+                f"https://www.youtube.com/channel/{channel_id}/videos",
+            ])
+        elif '/user/' in url:
+            # Format: https://www.youtube.com/user/UserName
+            user_name = url.split('/user/')[-1].split('/')[0].split('?')[0]
+            variants.extend([
+                f"https://www.youtube.com/user/{user_name}",
+                f"https://www.youtube.com/user/{user_name}/videos",
+                f"https://www.youtube.com/c/{user_name}",
+                f"https://www.youtube.com/@{user_name}",
+            ])
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_variants = []
+        for variant in variants:
+            if variant not in seen:
+                seen.add(variant)
+                unique_variants.append(variant)
+        
+        return unique_variants
     
     def _process_single_video(self, video_url: str) -> List[VideoInfo]:
         """Process a single video URL with anti-bot measures"""
