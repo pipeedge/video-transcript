@@ -38,6 +38,7 @@ for directory in [RAW_DATA_DIR, PROCESSED_DATA_DIR, AUDIO_DIR, TRANSCRIPTS_DIR]:
 
 # LLM Settings
 DEFAULT_LLM_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"  # Open source model
+FALLBACK_LLM_MODEL = "microsoft/DialoGPT-medium"  # Simpler fallback model
 CHUNK_SIZE = 4000  # For transcript chunking
 CHUNK_OVERLAP = 200  # Overlap between chunks
 

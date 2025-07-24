@@ -4,7 +4,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from huggingface_hub import login
 
-from ..config.settings import DEFAULT_LLM_MODEL, HUGGINGFACE_TOKEN, CHUNK_SIZE, CHUNK_OVERLAP
+from ..config.settings import DEFAULT_LLM_MODEL, FALLBACK_LLM_MODEL, HUGGINGFACE_TOKEN, CHUNK_SIZE, CHUNK_OVERLAP
 
 logger = logging.getLogger(__name__)
 
@@ -22,50 +22,80 @@ class LLMService:
         self._initialize_model()
     
     def _initialize_model(self):
-        """Initialize the LLM model and tokenizer"""
-        try:
-            # Login to Hugging Face if token provided
-            if HUGGINGFACE_TOKEN:
-                login(token=HUGGINGFACE_TOKEN)
-            
-            logger.info(f"Loading model: {self.model_name} on device: {self.device}")
-            
-            # Load tokenizer
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            
-            # Add padding token if it doesn't exist
-            if self.tokenizer.pad_token is None:
-                self.tokenizer.pad_token = self.tokenizer.eos_token
-            
-            # Load model with appropriate configuration for available hardware
-            model_kwargs = {
-                "torch_dtype": torch.float16 if self.device == "cuda" else torch.float32,
-                "device_map": "auto" if self.device == "cuda" else None,
-                "low_cpu_mem_usage": True,
-            }
-            
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_name, 
-                **model_kwargs
-            )
-            
-            # Create text generation pipeline
-            self.pipeline = pipeline(
-                "text-generation",
-                model=self.model,
-                tokenizer=self.tokenizer,
-                device_map="auto" if self.device == "cuda" else None,
-                do_sample=True,
-                temperature=0.1,
-                max_new_tokens=512,
-                pad_token_id=self.tokenizer.eos_token_id
-            )
-            
-            logger.info("Model loaded successfully")
-            
-        except Exception as e:
-            logger.error(f"Error initializing model: {e}")
-            raise
+        """Initialize the LLM model and tokenizer with fallback support"""
+        models_to_try = [self.model_name]
+        
+        # Add fallback model if different from default
+        if self.model_name != FALLBACK_LLM_MODEL:
+            models_to_try.append(FALLBACK_LLM_MODEL)
+        
+        # Add simple fallback models
+        models_to_try.extend([
+            "gpt2",  # Very reliable fallback
+            "distilgpt2"  # Even smaller fallback
+        ])
+        
+        for model_name in models_to_try:
+            try:
+                logger.info(f"Attempting to load model: {model_name} on device: {self.device}")
+                
+                # Login to Hugging Face if token provided
+                if HUGGINGFACE_TOKEN:
+                    login(token=HUGGINGFACE_TOKEN)
+                
+                # Load tokenizer with trust_remote_code for some models
+                try:
+                    self.tokenizer = AutoTokenizer.from_pretrained(
+                        model_name,
+                        trust_remote_code=True
+                    )
+                except Exception as tokenizer_error:
+                    logger.warning(f"Error loading tokenizer for {model_name}: {tokenizer_error}")
+                    continue
+                
+                # Add padding token if it doesn't exist
+                if self.tokenizer.pad_token is None:
+                    self.tokenizer.pad_token = self.tokenizer.eos_token
+                
+                # Load model with appropriate configuration for available hardware
+                model_kwargs = {
+                    "torch_dtype": torch.float16 if self.device == "cuda" else torch.float32,
+                    "device_map": "auto" if self.device == "cuda" else None,
+                    "low_cpu_mem_usage": True,
+                    "trust_remote_code": True
+                }
+                
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    model_name, 
+                    **model_kwargs
+                )
+                
+                # Create text generation pipeline
+                self.pipeline = pipeline(
+                    "text-generation",
+                    model=self.model,
+                    tokenizer=self.tokenizer,
+                    device_map="auto" if self.device == "cuda" else None,
+                    do_sample=True,
+                    temperature=0.1,
+                    max_new_tokens=512,
+                    pad_token_id=self.tokenizer.eos_token_id
+                )
+                
+                logger.info(f"✅ Successfully loaded model: {model_name}")
+                self.model_name = model_name  # Update to the model that actually worked
+                return
+                
+            except Exception as e:
+                logger.warning(f"Failed to load model {model_name}: {e}")
+                continue
+        
+        # If all models failed, raise the last error
+        raise RuntimeError(
+            "Failed to load any LLM model. Please ensure you have the required dependencies installed:\n"
+            "pip install sentencepiece protobuf\n"
+            "Or run: ./install_dependencies.sh"
+        )
     
     def generate_response(self, prompt: str, max_tokens: int = 512) -> str:
         """
@@ -79,20 +109,52 @@ class LLMService:
             Generated response text
         """
         try:
-            # Format prompt for instruction-tuned models
-            formatted_prompt = f"<s>[INST] {prompt} [/INST]"
+            # Format prompt based on model type
+            if "mistral" in self.model_name.lower():
+                # Mistral format
+                formatted_prompt = f"<s>[INST] {prompt} [/INST]"
+            elif "gpt" in self.model_name.lower():
+                # GPT format
+                formatted_prompt = f"Human: {prompt}\nAssistant:"
+            else:
+                # Default format
+                formatted_prompt = prompt
             
             # Generate response
-            response = self.pipeline(
-                formatted_prompt,
-                max_new_tokens=max_tokens,
-                temperature=0.1,
-                do_sample=True,
-                return_full_text=False
-            )
-            
-            generated_text = response[0]["generated_text"].strip()
-            return generated_text
+            try:
+                response = self.pipeline(
+                    formatted_prompt,
+                    max_new_tokens=max_tokens,
+                    temperature=0.1,
+                    do_sample=True,
+                    return_full_text=False,
+                    pad_token_id=self.tokenizer.eos_token_id
+                )
+                
+                generated_text = response[0]["generated_text"].strip()
+                return generated_text
+                
+            except Exception as pipeline_error:
+                logger.warning(f"Pipeline error, trying simpler generation: {pipeline_error}")
+                
+                # Fallback to direct model generation
+                inputs = self.tokenizer.encode(formatted_prompt, return_tensors="pt")
+                with torch.no_grad():
+                    outputs = self.model.generate(
+                        inputs,
+                        max_new_tokens=max_tokens,
+                        temperature=0.1,
+                        do_sample=True,
+                        pad_token_id=self.tokenizer.eos_token_id
+                    )
+                
+                # Decode response
+                generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+                # Remove the input prompt from response
+                if formatted_prompt in generated_text:
+                    generated_text = generated_text.replace(formatted_prompt, "").strip()
+                
+                return generated_text
             
         except Exception as e:
             logger.error(f"Error generating response: {e}")

@@ -94,6 +94,8 @@ def main():
         ("torch", "torch"),
         ("transformers", "transformers"),
         ("openai-whisper", "whisper"),
+        ("sentencepiece", "sentencepiece"),
+        ("protobuf", "google.protobuf"),
     ]
     
     for pkg, import_name in ml_packages:

@@ -48,6 +48,21 @@ git pull  # If using git
 # Or re-download the fixed files
 ```
 
+### "Cannot instantiate this tokenizer from a slow version" / "sentencepiece"
+
+**Problem**: Missing sentencepiece dependency for Mistral model.
+
+**Solution**:
+```bash
+# Install missing dependencies
+pip install sentencepiece protobuf
+
+# Or run full installer
+./install_dependencies.sh
+
+# The system will automatically fallback to simpler models if needed
+```
+
 ### "CUDA out of memory"
 
 **Problem**: GPU memory insufficient for large models.
