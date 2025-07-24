@@ -387,8 +387,33 @@ class YouTubeDownloader:
                 logger.info(f"Audio already exists: {audio_path}")
                 return audio_path
             
-            # Download using yt-dlp
-            with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
+            # Download using yt-dlp with anti-bot configuration
+            download_opts = {
+                'format': 'bestaudio/best',
+                'extractaudio': True,
+                'audioformat': 'mp3',
+                'audioquality': '192K',
+                'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
+                'quiet': True,
+                'no_warnings': True,
+                'retries': 5,
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive',
+                },
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['android'],
+                        'skip': ['hls', 'dash'],
+                        'formats': 'missing_pot',  # Enable formats that might be missing PO token
+                    }
+                }
+            }
+            
+            with yt_dlp.YoutubeDL(download_opts) as ydl:
                 ydl.download([str(video_info.url)])
             
             # Verify the file was created
