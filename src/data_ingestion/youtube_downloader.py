@@ -60,9 +60,35 @@ class YouTubeDownloader:
             return []
     
     def _process_single_video(self, video_url: str) -> List[VideoInfo]:
-        """Process a single video URL"""
+        """Process a single video URL with anti-bot measures"""
+        
+        # Anti-bot configuration for single videos
+        ydl_opts = {
+            'quiet': True,
+            'retries': 5,
+            'sleep_interval': 2,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+            },
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android'],  # Android client works best
+                    'skip': ['hls', 'dash'],
+                }
+            }
+        }
+        
         try:
-            with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(video_url, download=False)
                 
             video_info = VideoInfo(
@@ -83,83 +109,160 @@ class YouTubeDownloader:
             return []
     
     def _process_channel_with_ytdlp(self, channel_url: str, max_videos: Optional[int] = None) -> List[VideoInfo]:
-        """Process a channel URL using yt-dlp (more reliable than pytube for channels)"""
-        try:
-            # Configure yt-dlp for channel extraction
-            ydl_opts = {
-                'quiet': True,
-                'extract_flat': True,  # Only get video list, don't download
-                'ignoreerrors': True,
-                'sleep_interval': 1,  # Sleep between requests
-                'max_sleep_interval': 5,
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['android', 'web'],  # Try different clients
-                        'skip': ['hls', 'dash']  # Skip complex formats
+        """Process a channel URL using yt-dlp with multiple anti-bot strategies"""
+        
+        # Multiple configurations to try (like MFM Vault approach)
+        configs = [
+            # Strategy 1: Android client (most successful)
+            {
+                'name': 'Android client',
+                'opts': {
+                    'quiet': True,
+                    'extract_flat': True,
+                    'ignoreerrors': True,
+                    'sleep_interval': 2,
+                    'max_sleep_interval': 8,
+                    'retries': 3,
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1',
+                        'Sec-Fetch-Dest': 'document',
+                        'Sec-Fetch-Mode': 'navigate',
+                        'Sec-Fetch-Site': 'none',
+                        'Sec-Fetch-User': '?1',
+                    },
+                    'extractor_args': {
+                        'youtube': {
+                            'player_client': ['android'],
+                            'skip': ['hls', 'dash'],
+                        }
+                    }
+                }
+            },
+            # Strategy 2: iOS client
+            {
+                'name': 'iOS client',
+                'opts': {
+                    'quiet': True,
+                    'extract_flat': True,
+                    'ignoreerrors': True,
+                    'sleep_interval': 3,
+                    'retries': 3,
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'keep-alive',
+                    },
+                    'extractor_args': {
+                        'youtube': {
+                            'player_client': ['ios'],
+                            'skip': ['hls', 'dash'],
+                        }
+                    }
+                }
+            },
+            # Strategy 3: Web client with different headers
+            {
+                'name': 'Web client',
+                'opts': {
+                    'quiet': True,
+                    'extract_flat': True,
+                    'ignoreerrors': True,
+                    'sleep_interval': 4,
+                    'retries': 2,
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1',
+                        'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+                        'Sec-Ch-Ua-Mobile': '?0',
+                        'Sec-Ch-Ua-Platform': '"Windows"',
+                        'Sec-Fetch-Dest': 'document',
+                        'Sec-Fetch-Mode': 'navigate',
+                        'Sec-Fetch-Site': 'none',
+                        'Sec-Fetch-User': '?1',
+                    },
+                    'extractor_args': {
+                        'youtube': {
+                            'player_client': ['web'],
+                            'skip': ['hls', 'dash'],
+                        }
                     }
                 }
             }
+        ]
+        
+        # Try each configuration
+        for config in configs:
+            try:
+                logger.info(f"Trying {config['name']} strategy for channel extraction")
+                return self._try_ytdlp_config(channel_url, config['opts'], max_videos)
+            except Exception as e:
+                logger.warning(f"{config['name']} failed: {str(e)[:100]}...")
+                continue
+        
+        # If all strategies fail, raise the last error
+        raise Exception("All anti-bot strategies failed")
+    
+    def _try_ytdlp_config(self, channel_url: str, ydl_opts: dict, max_videos: Optional[int] = None) -> List[VideoInfo]:
+        """Try a specific yt-dlp configuration"""
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            logger.info(f"Extracting channel info with yt-dlp: {channel_url}")
+            channel_info = ydl.extract_info(channel_url, download=False)
             
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                logger.info(f"Extracting channel info with yt-dlp: {channel_url}")
-                channel_info = ydl.extract_info(channel_url, download=False)
-                
-                if not channel_info or 'entries' not in channel_info:
-                    logger.error("No entries found in channel")
-                    return []
-                
-                videos = []
-                entries = channel_info['entries']
-                
-                # Limit the number of videos to process
-                if max_videos:
-                    entries = entries[:max_videos]
-                
-                logger.info(f"Found {len(entries)} videos to process")
-                
-                for i, entry in enumerate(entries):
-                    if not entry:  # Skip None entries
-                        continue
-                        
-                    try:
-                        # Get full video info
-                        video_url = f"https://www.youtube.com/watch?v={entry['id']}"
-                        
-                        # Extract detailed info for this video
-                        with yt_dlp.YoutubeDL({'quiet': True}) as video_ydl:
-                            video_info_raw = video_ydl.extract_info(video_url, download=False)
-                        
-                        video_info = VideoInfo(
-                            video_id=video_info_raw['id'],
-                            title=video_info_raw.get('title', entry.get('title', '')),
-                            description=video_info_raw.get('description', ''),
-                            url=video_url,
-                            duration=video_info_raw.get('duration'),
-                            publish_date=datetime.fromtimestamp(video_info_raw.get('timestamp', 0)) if video_info_raw.get('timestamp') else None,
-                            thumbnail_url=video_info_raw.get('thumbnail')
-                        )
-                        
-                        videos.append(video_info)
-                        logger.info(f"Processed video {i+1}/{len(entries)}: {video_info.title}")
-                        
-                    except Exception as e:
-                        logger.warning(f"Error processing video {i+1}: {e}")
-                        continue
-                
-                logger.info(f"Successfully processed {len(videos)} videos from channel")
-                return videos
-                
-        except Exception as e:
-            error_msg = str(e)
-            if "Sign in to confirm you're not a bot" in error_msg:
-                logger.error("YouTube is blocking automated access (bot detection)")
-                logger.info("Try again later, use a VPN, or process local audio files")
-                logger.info("For demo purposes, run: python demo_data.py && python example.py")
-            else:
-                logger.error(f"Error processing channel with yt-dlp: {e}")
+            if not channel_info or 'entries' not in channel_info:
+                logger.error("No entries found in channel")
+                return []
             
-            # Fallback to pytube method
-            return self._process_channel_with_pytube(channel_url, max_videos)
+            videos = []
+            entries = channel_info['entries']
+            
+            # Limit the number of videos to process
+            if max_videos:
+                entries = entries[:max_videos]
+            
+            logger.info(f"Found {len(entries)} videos to process")
+            
+            for i, entry in enumerate(entries):
+                if not entry:  # Skip None entries
+                    continue
+                    
+                try:
+                    # Get full video info
+                    video_url = f"https://www.youtube.com/watch?v={entry['id']}"
+                    
+                    # Use the same configuration for individual video extraction
+                    with yt_dlp.YoutubeDL(ydl_opts) as video_ydl:
+                        video_info_raw = video_ydl.extract_info(video_url, download=False)
+                    
+                    video_info = VideoInfo(
+                        video_id=video_info_raw['id'],
+                        title=video_info_raw.get('title', entry.get('title', '')),
+                        description=video_info_raw.get('description', ''),
+                        url=video_url,
+                        duration=video_info_raw.get('duration'),
+                        publish_date=datetime.fromtimestamp(video_info_raw.get('timestamp', 0)) if video_info_raw.get('timestamp') else None,
+                        thumbnail_url=video_info_raw.get('thumbnail')
+                    )
+                    
+                    videos.append(video_info)
+                    logger.info(f"Processed video {i+1}/{len(entries)}: {video_info.title}")
+                    
+                except Exception as e:
+                    logger.warning(f"Error processing video {i+1}: {e}")
+                    continue
+            
+            logger.info(f"Successfully processed {len(videos)} videos from channel")
+            return videos
     
     def _process_channel_with_pytube(self, channel_url: str, max_videos: Optional[int] = None) -> List[VideoInfo]:
         """Fallback method using pytube"""
