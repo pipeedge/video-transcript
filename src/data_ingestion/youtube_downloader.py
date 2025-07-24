@@ -150,6 +150,11 @@ class YouTubeDownloader:
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(video_url, download=False)
+            
+            # Check if video info was successfully extracted
+            if not info:
+                logger.error(f"Video is unavailable or private: {video_url}")
+                return []
                 
             video_info = VideoInfo(
                 video_id=info['id'],
@@ -257,6 +262,11 @@ class YouTubeDownloader:
                     with yt_dlp.YoutubeDL(ydl_opts) as video_ydl:
                         video_info_raw = video_ydl.extract_info(video_url, download=False)
                     
+                    # Check if video info was successfully extracted
+                    if not video_info_raw:
+                        logger.warning(f"Video {i+1} ({entry.get('id', 'unknown')}) is unavailable or private - skipping")
+                        continue
+                    
                     video_info = VideoInfo(
                         video_id=video_info_raw['id'],
                         title=video_info_raw.get('title', entry.get('title', '')),
@@ -335,137 +345,70 @@ class YouTubeDownloader:
                 logger.info(f"Audio already exists: {audio_path}")
                 return audio_path
             
-            # Multiple download strategies (ordered by reliability)
-            download_strategies = [
-                # Strategy 1: Web client without PO token (works for older/public videos)
-                {
-                    'name': 'Web client (no PO token)',
-                    'opts': {
-                        'format': 'bestaudio/best',
-                        'extractaudio': True,
-                        'audioformat': 'mp3',
-                        'audioquality': '192K',
-                        'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
-                        'quiet': True,
-                        'no_warnings': True,
-                        'retries': 2,
-                        'extractor_args': {
-                            'youtube': {
-                                'player_client': ['web'],
-                                'skip': ['hls', 'dash'],
-                            }
-                        }
-                    }
-                },
-                # Strategy 2: Mobile web client (sometimes bypasses PO token requirement)
-                {
-                    'name': 'Mobile web client',
-                    'opts': {
-                        'format': 'bestaudio/best',
-                        'extractaudio': True,
-                        'audioformat': 'mp3',
-                        'audioquality': '192K',
-                        'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
-                        'quiet': True,
-                        'no_warnings': True,
-                        'retries': 2,
-                        'http_headers': {
-                            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
-                        },
-                        'extractor_args': {
-                            'youtube': {
-                                'player_client': ['mweb'],
-                                'skip': ['hls', 'dash'],
-                            }
-                        }
-                    }
-                },
-                # Strategy 3: Android client (alternative for PO token issues)
-                {
-                    'name': 'Android client',
-                    'opts': {
-                        'format': 'bestaudio/best',
-                        'extractaudio': True,
-                        'audioformat': 'mp3',
-                        'audioquality': '192K',
-                        'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
-                        'quiet': True,
-                        'no_warnings': True,
-                        'retries': 2,
-                        'extractor_args': {
-                            'youtube': {
-                                'player_client': ['android'],
-                                'skip': ['hls', 'dash'],
-                            }
-                        }
-                    }
-                },
-                # Strategy 4: Basic fallback (lowest quality but most reliable)
-                {
-                    'name': 'Basic fallback',
-                    'opts': {
-                        'format': 'worst[ext=mp4]/worst',
-                        'extractaudio': True,
-                        'audioformat': 'mp3',
-                        'audioquality': '128K',
-                        'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
-                        'quiet': True,
-                        'no_warnings': True,
-                        'retries': 1,
-                        'extractor_args': {
-                            'youtube': {
-                                'skip': ['hls', 'dash'],
-                            }
+            # Web client only strategy (simplified)
+            download_strategy = {
+                'name': 'Web client',
+                'opts': {
+                    'format': 'bestaudio/best',
+                    'extractaudio': True,
+                    'audioformat': 'mp3',
+                    'audioquality': '192K',
+                    'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
+                    'quiet': True,
+                    'no_warnings': True,
+                    'retries': 3,
+                    'extractor_args': {
+                        'youtube': {
+                            'player_client': ['web'],
+                            'skip': ['hls', 'dash'],
                         }
                     }
                 }
-            ]
+            }
             
-            # Try each strategy
-            for strategy in download_strategies:
-                try:
-                    logger.info(f"Trying {strategy['name']} for audio download")
-                    
-                    with yt_dlp.YoutubeDL(strategy['opts']) as ydl:
-                        ydl.download([str(video_info.url)])
-                    
-                    # Check for various possible output formats
-                    possible_paths = [
-                        self.audio_dir / f"{video_info.video_id}.mp3",
-                        self.audio_dir / f"{video_info.video_id}.m4a",
-                        self.audio_dir / f"{video_info.video_id}.webm",
-                        self.audio_dir / f"{video_info.video_id}.opus",
-                    ]
-                    
-                    for path in possible_paths:
-                        if path.exists():
-                            # Convert to mp3 if needed
-                            if path.suffix != '.mp3':
-                                mp3_path = path.with_suffix('.mp3')
-                                logger.info(f"Converting {path} to MP3")
-                                audio = AudioSegment.from_file(str(path))
-                                audio.export(str(mp3_path), format="mp3", bitrate="192k")
-                                path.unlink()  # Remove original file
-                                path = mp3_path
-                            
-                            logger.info(f"Successfully downloaded audio with {strategy['name']}: {path}")
-                            return path
-                    
-                    logger.warning(f"{strategy['name']} completed but no audio file found")
-                    
-                except Exception as e:
-                    error_msg = str(e)
-                    if "Sign in to confirm you're not a bot" in error_msg:
-                        logger.warning(f"{strategy['name']} failed: Bot detection")
-                    elif "requires a PO token" in error_msg or "PO token" in error_msg:
-                        logger.warning(f"{strategy['name']} failed: PO token required")
-                    else:
-                        logger.warning(f"{strategy['name']} failed: {error_msg[:100]}")
-                    continue
+            # Try web client download
+            try:
+                logger.info(f"Trying {download_strategy['name']} for audio download")
+                
+                with yt_dlp.YoutubeDL(download_strategy['opts']) as ydl:
+                    ydl.download([str(video_info.url)])
+                
+                # Check for various possible output formats
+                possible_paths = [
+                    self.audio_dir / f"{video_info.video_id}.mp3",
+                    self.audio_dir / f"{video_info.video_id}.m4a",
+                    self.audio_dir / f"{video_info.video_id}.webm",
+                    self.audio_dir / f"{video_info.video_id}.opus",
+                ]
+                
+                for path in possible_paths:
+                    if path.exists():
+                        # Convert to mp3 if needed
+                        if path.suffix != '.mp3':
+                            mp3_path = path.with_suffix('.mp3')
+                            logger.info(f"Converting {path} to MP3")
+                            audio = AudioSegment.from_file(str(path))
+                            audio.export(str(mp3_path), format="mp3", bitrate="192k")
+                            path.unlink()  # Remove original file
+                            path = mp3_path
+                        
+                        logger.info(f"Successfully downloaded audio with {download_strategy['name']}: {path}")
+                        return path
+                
+                logger.warning(f"{download_strategy['name']} completed but no audio file found")
+                
+            except Exception as e:
+                error_msg = str(e)
+                if "Sign in to confirm you're not a bot" in error_msg:
+                    logger.error(f"{download_strategy['name']} failed: Bot detection")
+                elif "requires a PO token" in error_msg or "PO token" in error_msg:
+                    logger.error(f"{download_strategy['name']} failed: PO token required")
+                else:
+                    logger.error(f"{download_strategy['name']} failed: {error_msg[:100]}")
             
-            # If all strategies fail, provide helpful message
-            logger.error(f"All download strategies failed for {video_info.video_id}")
-            logger.info("This video may require a PO token. Try using a different video or implement PO token extraction.")
+            # If download fails, provide helpful message
+            logger.error(f"Web client download failed for {video_info.video_id}")
+            logger.info("This video may require a PO token or different approach. Try using a different video.")
             return None
                 
         except Exception as e:
