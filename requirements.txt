@@ -1,7 +1,7 @@
 # Core dependencies
 pytube==15.0.0
 yt-dlp==2024.7.16
-requests==2.31.0
+requests==2.32.2
 python-dotenv==1.0.0
 
 # Audio processing
@@ -11,7 +11,7 @@ librosa==0.10.2
 # Transcription (Open Source)
 openai-whisper==20231117
 # Optional: Deepgram SDK (if API key provided)
-deepgram-sdk==3.0.0b1
+deepgram-sdk==3.5.1
 
 # LLM and ML
 transformers==4.41.2
