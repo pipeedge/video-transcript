@@ -32,20 +32,124 @@ class YouTubeDownloader:
             'no_warnings': True,
         }
     
-    def get_channel_videos(self, channel_url: str, max_videos: Optional[int] = None) -> List[VideoInfo]:
+    def get_channel_videos(self, url: str, max_videos: Optional[int] = None) -> List[VideoInfo]:
         """
-        Get list of videos from a YouTube channel
+        Get list of videos from a YouTube channel or single video URL
         
         Args:
-            channel_url: YouTube channel URL
+            url: YouTube channel URL or individual video URL
             max_videos: Maximum number of videos to fetch (None for all)
             
         Returns:
             List of VideoInfo objects
         """
         try:
-            logger.info(f"Fetching videos from channel: {channel_url}")
+            logger.info(f"Processing URL: {url}")
             
+            # Check if it's a single video URL
+            if 'watch?v=' in url or 'youtu.be/' in url:
+                logger.info("Detected single video URL")
+                return self._process_single_video(url)
+            
+            # Otherwise treat as channel URL
+            logger.info("Treating as channel URL")
+            return self._process_channel_with_ytdlp(url, max_videos)
+            
+        except Exception as e:
+            logger.error(f"Error processing URL: {e}")
+            return []
+    
+    def _process_single_video(self, video_url: str) -> List[VideoInfo]:
+        """Process a single video URL"""
+        try:
+            with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+                info = ydl.extract_info(video_url, download=False)
+                
+            video_info = VideoInfo(
+                video_id=info['id'],
+                title=info.get('title', ''),
+                description=info.get('description', ''),
+                url=video_url,
+                duration=info.get('duration'),
+                publish_date=datetime.fromtimestamp(info.get('timestamp', 0)) if info.get('timestamp') else None,
+                thumbnail_url=info.get('thumbnail')
+            )
+            
+            logger.info(f"Successfully processed single video: {video_info.title}")
+            return [video_info]
+            
+        except Exception as e:
+            logger.error(f"Error processing single video {video_url}: {e}")
+            return []
+    
+    def _process_channel_with_ytdlp(self, channel_url: str, max_videos: Optional[int] = None) -> List[VideoInfo]:
+        """Process a channel URL using yt-dlp (more reliable than pytube for channels)"""
+        try:
+            # Configure yt-dlp for channel extraction
+            ydl_opts = {
+                'quiet': True,
+                'extract_flat': True,  # Only get video list, don't download
+                'ignoreerrors': True,
+            }
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                logger.info(f"Extracting channel info with yt-dlp: {channel_url}")
+                channel_info = ydl.extract_info(channel_url, download=False)
+                
+                if not channel_info or 'entries' not in channel_info:
+                    logger.error("No entries found in channel")
+                    return []
+                
+                videos = []
+                entries = channel_info['entries']
+                
+                # Limit the number of videos to process
+                if max_videos:
+                    entries = entries[:max_videos]
+                
+                logger.info(f"Found {len(entries)} videos to process")
+                
+                for i, entry in enumerate(entries):
+                    if not entry:  # Skip None entries
+                        continue
+                        
+                    try:
+                        # Get full video info
+                        video_url = f"https://www.youtube.com/watch?v={entry['id']}"
+                        
+                        # Extract detailed info for this video
+                        with yt_dlp.YoutubeDL({'quiet': True}) as video_ydl:
+                            video_info_raw = video_ydl.extract_info(video_url, download=False)
+                        
+                        video_info = VideoInfo(
+                            video_id=video_info_raw['id'],
+                            title=video_info_raw.get('title', entry.get('title', '')),
+                            description=video_info_raw.get('description', ''),
+                            url=video_url,
+                            duration=video_info_raw.get('duration'),
+                            publish_date=datetime.fromtimestamp(video_info_raw.get('timestamp', 0)) if video_info_raw.get('timestamp') else None,
+                            thumbnail_url=video_info_raw.get('thumbnail')
+                        )
+                        
+                        videos.append(video_info)
+                        logger.info(f"Processed video {i+1}/{len(entries)}: {video_info.title}")
+                        
+                    except Exception as e:
+                        logger.warning(f"Error processing video {i+1}: {e}")
+                        continue
+                
+                logger.info(f"Successfully processed {len(videos)} videos from channel")
+                return videos
+                
+        except Exception as e:
+            logger.error(f"Error processing channel with yt-dlp: {e}")
+            # Fallback to pytube method
+            return self._process_channel_with_pytube(channel_url, max_videos)
+    
+    def _process_channel_with_pytube(self, channel_url: str, max_videos: Optional[int] = None) -> List[VideoInfo]:
+        """Fallback method using pytube"""
+        try:
+            logger.info("Attempting fallback with pytube...")
             channel = Channel(channel_url)
             videos = []
             
@@ -74,11 +178,11 @@ class YouTubeDownloader:
                     logger.error(f"Error extracting info for video {video}: {e}")
                     continue
                     
-            logger.info(f"Found {len(videos)} videos from channel")
+            logger.info(f"Pytube fallback found {len(videos)} videos")
             return videos
             
         except Exception as e:
-            logger.error(f"Error fetching channel videos: {e}")
+            logger.error(f"Pytube fallback also failed: {e}")
             return []
     
     def download_audio(self, video_info: VideoInfo) -> Optional[Path]:
