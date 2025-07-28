@@ -369,7 +369,6 @@ class YouTubeDownloader:
                         'youtube': {
                             'player_client': ['web', 'mweb'],
                             'skip': ['hls'],
-                            'po_token': 'provider:bgutil_ytdlp_pot_provider',
                         }
                     }
                 }
@@ -386,6 +385,7 @@ class YouTubeDownloader:
                 possible_paths = [
                     self.audio_dir / f"{video_info.video_id}.mp3",
                     self.audio_dir / f"{video_info.video_id}.m4a",
+                    self.audio_dir / f"{video_info.video_id}.mp4",
                     self.audio_dir / f"{video_info.video_id}.webm",
                     self.audio_dir / f"{video_info.video_id}.opus",
                 ]
