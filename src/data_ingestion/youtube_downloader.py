@@ -345,22 +345,31 @@ class YouTubeDownloader:
                 logger.info(f"Audio already exists: {audio_path}")
                 return audio_path
             
-            # Web client only strategy (simplified)
+            # Enhanced web client strategy with fallbacks
             download_strategy = {
                 'name': 'Web client',
                 'opts': {
-                    'format': 'bestaudio/best',
+                    'format': 'bestaudio[ext=m4a]/bestaudio/best[height<=480]',
                     'extractaudio': True,
                     'audioformat': 'mp3',
                     'audioquality': '192K',
                     'outtmpl': str(self.audio_dir / '%(id)s.%(ext)s'),
-                    'quiet': True,
-                    'no_warnings': True,
-                    'retries': 3,
+                    'quiet': False,  # Enable more verbose output for debugging
+                    'no_warnings': False,
+                    'retries': 5,
+                    'fragment_retries': 5,
+                    'ignoreerrors': False,
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-us,en;q=0.5',
+                        'Sec-Fetch-Mode': 'navigate',
+                    },
                     'extractor_args': {
                         'youtube': {
-                            'player_client': ['web'],
-                            'skip': ['hls', 'dash'],
+                            'player_client': ['web', 'mweb'],
+                            'skip': ['hls'],
+                            'po_token': 'provider:bgutil_ytdlp_pot_provider',
                         }
                     }
                 }
