@@ -5,8 +5,19 @@ from pathlib import Path
 from datetime import datetime
 
 import yt_dlp
-from pytube import Channel
-from pydub import AudioSegment
+
+# Optional audio processing imports (for Python 3.13 compatibility)
+try:
+    from pytube import Channel
+    PYTUBE_AVAILABLE = True
+except ImportError:
+    PYTUBE_AVAILABLE = False
+
+try:
+    from pydub import AudioSegment
+    PYDUB_AVAILABLE = True
+except ImportError:
+    PYDUB_AVAILABLE = False
 
 from ..config.settings import AUDIO_DIR, RAW_DATA_DIR
 from ..models.podcast import VideoInfo
@@ -289,6 +300,9 @@ class YouTubeDownloader:
     
     def _process_channel_with_pytube(self, channel_url: str, max_videos: Optional[int] = None) -> List[VideoInfo]:
         """Fallback method using pytube"""
+        if not PYTUBE_AVAILABLE:
+            raise ImportError("pytube not available (Python 3.13 compatibility)")
+            
         try:
             logger.info("Attempting fallback with pytube...")
             channel = Channel(channel_url)
@@ -392,14 +406,16 @@ class YouTubeDownloader:
                 
                 for path in possible_paths:
                     if path.exists():
-                        # Convert to mp3 if needed
-                        if path.suffix != '.mp3':
+                        # Convert to mp3 if needed (skip if pydub not available)
+                        if path.suffix != '.mp3' and PYDUB_AVAILABLE:
                             mp3_path = path.with_suffix('.mp3')
                             logger.info(f"Converting {path} to MP3")
                             audio = AudioSegment.from_file(str(path))
                             audio.export(str(mp3_path), format="mp3", bitrate="192k")
                             path.unlink()  # Remove original file
                             path = mp3_path
+                        elif path.suffix != '.mp3':
+                            logger.info(f"Keeping original format {path.suffix} (pydub not available for conversion)")
                         
                         logger.info(f"Successfully downloaded audio with {download_strategy['name']}: {path}")
                         return path
@@ -435,6 +451,10 @@ class YouTubeDownloader:
             Path to WAV file or None if failed
         """
         try:
+            if not PYDUB_AVAILABLE:
+                logger.warning("pydub not available - returning original audio file")
+                return audio_path
+            
             wav_path = audio_path.with_suffix('.wav')
             
             if wav_path.exists():

@@ -3,8 +3,12 @@ import json
 import os
 from typing import List, Optional
 from pathlib import Path
-import whisper
-import torch
+try:
+    import whisper
+    import torch
+    WHISPER_AVAILABLE = True
+except ImportError:
+    WHISPER_AVAILABLE = False
 
 from ..config.settings import TRANSCRIPTS_DIR
 from ..models.podcast import TranscriptSegment
@@ -26,6 +30,9 @@ class WhisperTranscriptionService:
                        - small/medium: better accuracy
                        - large: best accuracy but slower
         """
+        if not WHISPER_AVAILABLE:
+            raise ImportError("Whisper not available (Python 3.13 compatibility)")
+            
         self.model_size = model_size
         self.transcripts_dir = Path(TRANSCRIPTS_DIR)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
