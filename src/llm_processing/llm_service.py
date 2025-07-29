@@ -362,7 +362,13 @@ After presenting your findings, reflect on your answer, performing sanity checks
  
 Remember to be specific, avoid overlap, and ensure each insight provides unique value to the reader."""
         
-        response = self.generate_response(prompt, max_tokens=1200)
+        response = self.generate_response(prompt, max_tokens=800)  # Reduced for GPU memory efficiency
+        
+        # Clear GPU cache to free memory for next chunk
+        if self.device == "cuda":
+            import torch
+            torch.cuda.empty_cache()
+        
         return self._parse_insights_response(response, categories)
     
     def find_timestamp_for_insight(self, full_transcript: str, insight_text: str) -> tuple[Optional[float], Optional[float]]:
