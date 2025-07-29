@@ -40,10 +40,11 @@ class DirectTranscriptExtractor:
         logger.info(f"Attempting to extract transcript for: {video_info.title}")
         
         # Try multiple extraction methods in order of preference
+        # Note: Prioritizing yt-dlp methods due to YouTube Transcript API compatibility issues
         methods = [
-            ("YouTube Transcript API", self._extract_with_youtube_transcript_api),
             ("yt-dlp Auto Subtitles", self._extract_with_ytdlp_auto_subtitles),
             ("yt-dlp Manual Subtitles", self._extract_with_ytdlp_manual_subtitles),
+            ("YouTube Transcript API", self._extract_with_youtube_transcript_api),
         ]
         
         for method_name, method_func in methods:
@@ -73,19 +74,29 @@ class DirectTranscriptExtractor:
         try:
             # Use the correct API pattern - instantiate and call fetch
             api = YouTubeTranscriptApi()
-            transcript_data = api.fetch(video_info.video_id)
+            fetched_transcript = api.fetch(video_info.video_id)
+            
+            if not fetched_transcript or not hasattr(fetched_transcript, 'snippets'):
+                return None
+            
+            # Get the actual transcript snippets
+            transcript_snippets = fetched_transcript.snippets
+            
+            if not transcript_snippets:
+                return None
             
             # Convert to TranscriptSegment objects
             segments = []
-            for i, entry in enumerate(transcript_data):
+            for snippet in transcript_snippets:
                 segment = TranscriptSegment(
-                    start_time=entry.get('start', 0),
-                    end_time=entry.get('start', 0) + entry.get('duration', 0),
-                    text=entry.get('text', '').strip(),
+                    start_time=snippet.start,
+                    end_time=snippet.start + snippet.duration,
+                    text=snippet.text.strip(),
                     speaker=None  # YouTube transcripts don't include speaker info
                 )
                 segments.append(segment)
             
+            logger.info(f"✅ Successfully extracted transcript using YouTube Transcript API")
             return segments
             
         except Exception as e:
