@@ -117,10 +117,10 @@ data/
 ### Process My First Million Podcast
 ```bash
 # Try direct transcripts first (faster)
-python run.py process "https://www.youtube.com/@MyFirstMillionPod" --direct-transcripts --max-videos 3
+python run.py process https://www.youtube.com/@MicrosoftDeveloper --direct-transcripts --max-videos 3
 
 # If that fails, fall back to audio transcription
-python run.py process "https://www.youtube.com/@MyFirstMillionPod" --max-videos 3
+python run.py process "https://www.youtube.com/@MicrosoftDeveloper" --max-videos 3
 ```
 
 ### Process Lex Fridman Podcast

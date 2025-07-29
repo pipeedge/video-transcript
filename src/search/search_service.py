@@ -13,14 +13,23 @@ class SearchService:
     """Handles search indexing and retrieval using MeiliSearch"""
     
     def __init__(self):
-        self.client = meilisearch.Client(MEILISEARCH_URL, MEILISEARCH_MASTER_KEY)
-        
-        # Index names
-        self.insights_index_name = "insights"
-        self.segments_index_name = "segments"
-        self.episodes_index_name = "episodes"
-        
-        self._setup_indexes()
+        try:
+            self.client = meilisearch.Client(MEILISEARCH_URL, MEILISEARCH_MASTER_KEY)
+            
+            # Index names
+            self.insights_index_name = "insights"
+            self.segments_index_name = "segments"
+            self.episodes_index_name = "episodes"
+            
+            self._setup_indexes()
+            self.search_available = True
+            logger.info("✅ MeiliSearch search service initialized successfully")
+            
+        except Exception as e:
+            logger.warning(f"⚠️  MeiliSearch not available: {e}")
+            logger.info("💡 To enable search functionality, start MeiliSearch with: ./start_meilisearch.sh")
+            self.client = None
+            self.search_available = False
     
     def _setup_indexes(self):
         """Set up MeiliSearch indexes with proper configuration"""
@@ -63,6 +72,10 @@ class SearchService:
     
     def index_episode(self, episode: Episode):
         """Index a complete episode with all its data"""
+        if not self.search_available:
+            logger.info(f"Search not available - skipping indexing for: {episode.video_info.title}")
+            return
+            
         try:
             # Index episode metadata
             self._index_episode_metadata(episode)
@@ -164,6 +177,10 @@ class SearchService:
         Returns:
             Search results from MeiliSearch
         """
+        if not self.search_available:
+            logger.warning("Search not available - returning empty results")
+            return {'hits': [], 'estimatedTotalHits': 0}
+            
         try:
             insights_index = self.client.index(self.insights_index_name)
             
@@ -203,6 +220,10 @@ class SearchService:
                        speaker: Optional[str] = None,
                        limit: int = 20) -> Dict[str, Any]:
         """Search for transcript segments"""
+        if not self.search_available:
+            logger.warning("Search not available - returning empty results")
+            return {'hits': [], 'estimatedTotalHits': 0}
+            
         try:
             segments_index = self.client.index(self.segments_index_name)
             
@@ -236,6 +257,10 @@ class SearchService:
     
     def search_episodes(self, query: str, limit: int = 10) -> Dict[str, Any]:
         """Search for episodes"""
+        if not self.search_available:
+            logger.warning("Search not available - returning empty results")
+            return {'hits': [], 'estimatedTotalHits': 0}
+            
         try:
             episodes_index = self.client.index(self.episodes_index_name)
             
@@ -258,6 +283,10 @@ class SearchService:
     
     def get_insight_categories(self) -> List[str]:
         """Get all available insight categories"""
+        if not self.search_available:
+            logger.warning("Search not available - returning empty categories")
+            return []
+            
         try:
             insights_index = self.client.index(self.insights_index_name)
             
@@ -279,6 +308,10 @@ class SearchService:
     
     def get_stats(self) -> Dict[str, Any]:
         """Get search index statistics"""
+        if not self.search_available:
+            logger.warning("Search not available - returning empty stats")
+            return {}
+            
         try:
             insights_index = self.client.index(self.insights_index_name)
             segments_index = self.client.index(self.segments_index_name)
