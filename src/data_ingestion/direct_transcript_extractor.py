@@ -283,36 +283,56 @@ class DirectTranscriptExtractor:
                     entries = info['entries']
                     logger.info(f"Found {len(entries)} entries in channel")
                     
-                    for i, entry in enumerate(entries):
+                    def process_entry(entry, depth=0):
+                        """Recursively process entries (handles nested playlists)"""
                         if not entry:
-                            continue
+                            return
                             
                         # Skip if we've reached max_videos
                         if max_videos and len(videos) >= max_videos:
-                            break
-                            
-                        try:
-                            # Create VideoInfo from entry
-                            video_info = VideoInfo(
-                                video_id=entry.get('id', ''),
-                                title=entry.get('title', ''),
-                                description=entry.get('description', ''),
-                                url=entry.get('webpage_url', f"https://www.youtube.com/watch?v={entry.get('id', '')}"),
-                                duration=entry.get('duration'),
-                                publish_date=datetime.fromtimestamp(entry.get('timestamp', 0)) if entry.get('timestamp') else None,
-                                thumbnail_url=entry.get('thumbnail')
-                            )
-                            
-                            # Validate video ID
-                            if video_info.video_id and len(video_info.video_id) == 11:
-                                videos.append(video_info)
-                                logger.info(f"Added video {len(videos)}: {video_info.title}")
-                            else:
-                                logger.warning(f"Skipping entry with invalid video ID: {entry.get('id', 'unknown')}")
+                            return
+                        
+                        # Debug: log entry structure
+                        entry_type = entry.get('_type', 'unknown')
+                        entry_id = entry.get('id', 'no_id')
+                        entry_title = entry.get('title', 'no_title')
+                        logger.info(f"Processing entry (depth {depth}): type={entry_type}, id={entry_id}, title={entry_title}")
+                        
+                        # If this entry has its own entries (nested playlist), process them
+                        if 'entries' in entry and entry['entries']:
+                            logger.info(f"Found nested playlist with {len(entry['entries'])} entries: {entry_title}")
+                            for sub_entry in entry['entries']:
+                                process_entry(sub_entry, depth + 1)
+                        else:
+                            # This is an actual video
+                            try:
+                                video_id = entry.get('id', '')
                                 
-                        except Exception as e:
-                            logger.warning(f"Error processing entry {i}: {e}")
-                            continue
+                                # Validate video ID (YouTube video IDs are 11 characters)
+                                if not video_id or len(video_id) != 11:
+                                    logger.warning(f"Invalid video ID length ({len(video_id)}): {video_id}")
+                                    return
+                                
+                                # Create VideoInfo from entry
+                                video_info = VideoInfo(
+                                    video_id=video_id,
+                                    title=entry.get('title', ''),
+                                    description=entry.get('description', ''),
+                                    url=entry.get('webpage_url', f"https://www.youtube.com/watch?v={video_id}"),
+                                    duration=entry.get('duration'),
+                                    publish_date=datetime.fromtimestamp(entry.get('timestamp', 0)) if entry.get('timestamp') else None,
+                                    thumbnail_url=entry.get('thumbnail')
+                                )
+                                
+                                videos.append(video_info)
+                                logger.info(f"✅ Added video {len(videos)}: {video_info.title}")
+                                
+                            except Exception as e:
+                                logger.warning(f"Error processing entry: {e}")
+                    
+                    # Process all entries (including nested ones)
+                    for entry in entries:
+                        process_entry(entry)
                 else:
                     # Single video
                     if info.get('id'):
