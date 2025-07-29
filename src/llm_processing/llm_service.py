@@ -57,33 +57,51 @@ class LLMService:
                 if self.tokenizer.pad_token is None:
                     self.tokenizer.pad_token = self.tokenizer.eos_token
                 
-                # Load model with simple configuration (avoid accelerate conflicts)
-                model_kwargs = {
-                    "torch_dtype": torch.float32,  # Use float32 for stability
-                    "low_cpu_mem_usage": True,
-                    "trust_remote_code": True
-                    # Removed device_map to avoid accelerate conflicts
-                }
+                # Load model with GPU-optimized configuration
+                if self.device == "cuda":
+                    model_kwargs = {
+                        "torch_dtype": torch.float16,
+                        "device_map": "auto",  # Let accelerate handle GPU placement
+                        "low_cpu_mem_usage": True,
+                        "trust_remote_code": True
+                    }
+                else:
+                    model_kwargs = {
+                        "torch_dtype": torch.float32,
+                        "low_cpu_mem_usage": True,
+                        "trust_remote_code": True
+                    }
                 
                 self.model = AutoModelForCausalLM.from_pretrained(
                     model_name, 
                     **model_kwargs
                 )
                 
-                # Move model to device manually (since we're not using device_map)
-                self.model = self.model.to(self.device)
-                
-                # Create text generation pipeline with explicit device
-                self.pipeline = pipeline(
-                    "text-generation",
-                    model=self.model,
-                    tokenizer=self.tokenizer,
-                    device=0 if self.device == "cuda" else -1,
-                    do_sample=True,
-                    temperature=0.1,
-                    max_new_tokens=512,
-                    pad_token_id=self.tokenizer.eos_token_id
-                )
+                # Create text generation pipeline - let accelerate handle device placement for GPU
+                if self.device == "cuda":
+                    # For GPU with device_map="auto", don't specify device in pipeline
+                    self.pipeline = pipeline(
+                        "text-generation",
+                        model=self.model,
+                        tokenizer=self.tokenizer,
+                        do_sample=True,
+                        temperature=0.1,
+                        max_new_tokens=512,
+                        pad_token_id=self.tokenizer.eos_token_id
+                    )
+                else:
+                    # For CPU, manually move model and specify device
+                    self.model = self.model.to(self.device)
+                    self.pipeline = pipeline(
+                        "text-generation",
+                        model=self.model,
+                        tokenizer=self.tokenizer,
+                        device=-1,
+                        do_sample=True,
+                        temperature=0.1,
+                        max_new_tokens=512,
+                        pad_token_id=self.tokenizer.eos_token_id
+                    )
                 
                 logger.info(f"✅ Successfully loaded model: {model_name}")
                 self.model_name = model_name  # Update to the model that actually worked
@@ -142,6 +160,15 @@ class LLMService:
                 
                 # Fallback to direct model generation
                 inputs = self.tokenizer.encode(formatted_prompt, return_tensors="pt")
+                
+                # Move inputs to the same device as the model
+                if self.device == "cuda":
+                    # For GPU models with device_map, find the device of the first parameter
+                    model_device = next(self.model.parameters()).device
+                    inputs = inputs.to(model_device)
+                else:
+                    inputs = inputs.to(self.device)
+                
                 with torch.no_grad():
                     outputs = self.model.generate(
                         inputs,
