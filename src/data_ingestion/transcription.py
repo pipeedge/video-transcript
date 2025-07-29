@@ -8,13 +8,17 @@ try:
     DEEPGRAM_AVAILABLE = True
 except ImportError:
     DEEPGRAM_AVAILABLE = False
-    logger.warning("Deepgram SDK not available - using Whisper as fallback")
+    # Note: logger defined below
 
 from .whisper_transcription import WhisperTranscriptionService
 from ..config.settings import DEEPGRAM_API_KEY, TRANSCRIPTS_DIR
 from ..models.podcast import TranscriptSegment
 
 logger = logging.getLogger(__name__)
+
+# Log warning about missing Deepgram after logger is defined
+if not DEEPGRAM_AVAILABLE:
+    logger.warning("Deepgram SDK not available - using Whisper as fallback")
 
 
 class TranscriptionService:
