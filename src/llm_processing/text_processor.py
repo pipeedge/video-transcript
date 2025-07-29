@@ -15,16 +15,14 @@ class TextProcessor:
     def __init__(self, llm_service: Optional[LLMService] = None):
         self.llm = llm_service or LLMService()
         
-        # Default insight categories - can be customized
+        # Default insight categories - aligned with comprehensive extraction prompt
         self.insight_categories = [
+            "Frameworks and Exercises",
+            "Points of View and Perspectives",
             "Business Ideas",
-            "Mental Models", 
-            "Frameworks",
-            "Stories",
-            "Products Mentioned",
-            "Actionable Advice",
+            "Stories and Anecdotes",
             "Quotes",
-            "Numbers & Metrics"
+            "Products"
         ]
     
     def process_transcript_segments(self, segments: List[TranscriptSegment]) -> List[CleanedSegment]:
@@ -126,6 +124,28 @@ class TextProcessor:
         logger.info(f"Extracted {len(insights_with_timestamps)} unique insights")
         return insights_with_timestamps
     
+    def create_framework_from_transcript(self, cleaned_segments: List[CleanedSegment], topic: str) -> str:
+        """
+        Create a structured framework from transcript segments about a specific topic
+        
+        Args:
+            cleaned_segments: List of cleaned transcript segments
+            topic: The specific topic/framework to extract
+            
+        Returns:
+            Structured markdown framework content
+        """
+        logger.info(f"Creating framework for topic: {topic}")
+        
+        # Combine all cleaned text
+        full_text = " ".join([segment.cleaned_text for segment in cleaned_segments])
+        
+        # Create framework using LLM
+        framework_content = self.llm.create_framework_content(full_text, topic)
+        
+        logger.info(f"Generated framework content for: {topic}")
+        return framework_content
+    
     def _process_chunk(self, chunk: str, video_id: str) -> List[Insight]:
         """Process a single chunk and extract insights"""
         try:
@@ -152,15 +172,16 @@ class TextProcessor:
             return []
     
     def _generate_insight_title(self, insight_text: str) -> str:
-        """Generate a short title for an insight"""
+        """Generate a short title for an insight using the comprehensive title generation prompt"""
         try:
-            # Use first sentence or first 50 characters as title
+            return self.llm.generate_insight_title(insight_text)
+        except Exception as e:
+            logger.warning(f"Error generating insight title: {e}")
+            # Fallback to simple title generation
             first_sentence = insight_text.split('.')[0]
             if len(first_sentence) > 50:
                 return first_sentence[:47] + "..."
             return first_sentence
-        except:
-            return insight_text[:50] + "..." if len(insight_text) > 50 else insight_text
     
     def _extract_tags(self, insight_text: str) -> List[str]:
         """Extract relevant tags from insight text"""

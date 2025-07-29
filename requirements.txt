@@ -35,3 +35,5 @@ pydantic==2.7.4
 # Data processing
 pandas==2.2.2
 numpy==1.26.4
+
+youtube-transcript-api==1.6.2

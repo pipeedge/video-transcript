@@ -196,9 +196,77 @@ Please provide only the title without any additional text or quotation marks."""
         
         return self.generate_response(prompt, max_tokens=20)
     
+    def generate_insight_title(self, insight_text: str) -> str:
+        """
+        Generate a concise title for an insight using the comprehensive title generation prompt
+        
+        Args:
+            insight_text: The insight content to generate a title for
+            
+        Returns:
+            Generated title (3-5 words, specific and active)
+        """
+        prompt = f"""# Title Generation
+<instructions>
+Your goal is to come up with a title for the following insight based off the transcript you've been given.
+ 
+You want the title to be short, but specific. The user should be able to look at the title and understand what the insight is about.
+ 
+Guidelines:
+- A generic title is the enemy. Use the unique verbiage of the insight to form the title.
+- Don't include 'the' in the title. For example, 'The Importance of Being Early' should just be 'Importance of Being Early'.
+- Speak in active voice. For example, 'Importance of Being Early' should be 'Being Early Is Important'.
+- Do not use adverbs. For example, 'Wealth Often Precedes Enjoyable Work' should be 'Wealth Precedes Enjoyable Work'. or 'Seamless Waymo Self-Driving Experience in San Francisco' should be 'Waymo in SF'
+- Wrap your title in <title> tags. Ex: <title>Employees Show Greatness Early</title>
+</instructions>
+ 
+<insight>
+{insight_text}
+</insight>"""
+        
+        response = self.generate_response(prompt, max_tokens=30)
+        
+        # Extract title from <title> tags if present
+        if "<title>" in response and "</title>" in response:
+            start = response.find("<title>") + 7
+            end = response.find("</title>")
+            return response[start:end].strip()
+        
+        # Fallback to the response itself if no tags
+        return response.strip()
+    
+    def create_framework_content(self, transcript_text: str, topic: str) -> str:
+        """
+        Create structured framework content from transcript text
+        
+        Args:
+            transcript_text: Raw transcript text about a specific topic
+            topic: The topic/framework to extract
+            
+        Returns:
+            Structured markdown framework content
+        """
+        prompt = f"""# Make Framework Content
+Your goal is to extract a concise but detailed framework about a topic given a transcript from a podcast. Below you will get a transcript from a user and you want to literally just repeat what the speaker said but in structured markdown.
+ 
+Guidelines
+* Remove the fluff - don't pad the text with extra information, only use dense information directly from the transcript
+* Bullet points - Use bullet points to describe the key pieces of information
+* Use a mix of parent bullets that stand on their own and then bullets that have children when needed
+* Start with a mini summary about what the page is about. Keep it short and factual
+* Image you are trying to repeat the speaker said but in a more structured and concise way. Use their wording and style.
+* Don't start with a title like "Elon Musk's hiring process", just get into the topic summary
+
+<topic>{topic}</topic>
+<raw_transcript>
+{transcript_text}
+</raw_transcript>"""
+        
+        return self.generate_response(prompt, max_tokens=1000)
+    
     def extract_insights(self, text_chunk: str, categories: List[str]) -> Dict[str, List[str]]:
         """
-        Extract insights from a text chunk
+        Extract insights from a text chunk using comprehensive analysis
         
         Args:
             text_chunk: Chunk of transcript text
@@ -207,29 +275,69 @@ Please provide only the title without any additional text or quotation marks."""
         Returns:
             Dictionary with categories as keys and lists of insights as values
         """
-        categories_str = ", ".join(categories)
         
-        prompt = f"""Please carefully read the following podcast transcript chunk. Your task is to extract all the key insights discussed. Organize these insights into the following categories: {categories_str}. For each insight, provide the verbatim quote or a detailed summary of the concept. Here is the transcript chunk:
-
+        prompt = f"""# Insight Extraction
+Here is the podcast transcript chunk you need to analyze:
+ 
+<transcript_chunk>
 {text_chunk}
-
-Please format your response as follows:
-Category 1:
-- Insight 1
-- Insight 2
-
-Category 2:
-- Insight 1
-- Insight 2
-
-Only include categories that have actual insights found in the text."""
+</transcript_chunk>
+ 
+You are an expert podcast analyst tasked with extracting key insights from podcast transcripts. Your goal is to provide a clear, concise, and valuable summary of the main points discussed in the podcast.
+ 
+Your task is to carefully read through this transcript and extract key insights, organizing them into the following categories:
+ 
+1. Frameworks and Exercises: Strategies, structured mental models, methods, or mental exercises mentioned for understanding or approaching situations. These should have specific names or clear structures.
+ 
+2. Points of View and Perspectives: Unique opinions, philosophies, or perspectives shared by the speakers. Focus on unpopular or particularly insightful viewpoints.
+ 
+3. Business Ideas: Specific business opportunities proposed as good ways to make money. Only include ideas explicitly presented as business opportunities.
+ 
+4. Stories and Anecdotes: Notable personal experiences or stories about others that illustrate important points or lessons.
+ 
+5. Quotes: Direct quotations from people other than the speakers, used to emphasize points or advance the conversation. Include the person being quoted and the exact words.
+ 
+6. Products: Specific products mentioned by name or with very detailed information.
+ 
+Instructions:
+1. Read the transcript carefully, identifying relevant information for each category.
+2. For each insight, create a brief title (3-5 words) and a one-sentence description. For quotes, include only the quote and the person being quoted.
+3. Ensure each insight is specific, valuable, and distinct. Avoid generic statements like "do better in school."
+4. Check that insights do not overlap across categories unless they represent truly distinct entities.
+5. Use the same language and vocabulary as the speakers in the transcript.
+6. Be thorough in your extraction, aiming to capture all relevant insights.
+ 
+Before providing your final output, wrap your extraction process inside <extraction_process> tags:
+<extraction_process>
+1. For each category, write down specific examples or quotes from the transcript that fit the category.
+2. Review each extracted insight for specificity and value. Refine or remove any that are too generic.
+3. Check for category overlap. Ensure each insight is placed in the most appropriate single category.
+4. Verify that each insight offers unique information and contributes to understanding the podcast content.
+5. Consider the context and background of the podcast to identify any nuanced insights that might not be immediately apparent.
+</extraction_process>
+ 
+After your extraction process, present your findings in the following format:
+ 
+---
+[Category Name]:
+ 
+* [Brief Title]: [One-sentence description]
+* [Another Brief Title]: [One-sentence description]
+[Continue for all insights in this category]
+ 
+[Repeat for each category]
+---
+ 
+After presenting your findings, reflect on your answer, performing sanity checks and mentioning any additional knowledge or background information which may be relevant.
+ 
+Remember to be specific, avoid overlap, and ensure each insight provides unique value to the reader."""
         
-        response = self.generate_response(prompt, max_tokens=800)
+        response = self.generate_response(prompt, max_tokens=1200)
         return self._parse_insights_response(response, categories)
     
     def find_timestamp_for_insight(self, full_transcript: str, insight_text: str) -> tuple[Optional[float], Optional[float]]:
         """
-        Find the timestamp for a specific insight in the full transcript
+        Find the timestamp for a specific insight in the full transcript using enhanced extraction
         
         Args:
             full_transcript: Full transcript with timestamps
@@ -238,14 +346,18 @@ Only include categories that have actual insights found in the text."""
         Returns:
             Tuple of (start_time, end_time) or (None, None) if not found
         """
-        prompt = f"""I will provide you with a full podcast transcript that includes timestamps, and a specific quote or insight that was extracted from it. Your task is to find the exact start and end time of when this specific quote or insight was said in the podcast. Analyze the transcript and return only the start and end times in seconds. Here is the transcript:
+        prompt = f"""# Time Stamp Extraction
 
-{full_transcript[:4000]}...  # Truncate for context window
+Your goal is to extract the start and end timestamps for when a topic is talked about. You want to identify when a topic is first talked about, then when it is done being talked about
+Only respond with the timestamps, nothing else.
 
-And here is the quote/insight you need to find:
+Here is the full transcript with timestamps:
+{full_transcript[:4000]}...
+
+Find the timestamps for this specific insight/topic:
 {insight_text}
 
-Please respond in the format: "START: [seconds] END: [seconds]" or "NOT FOUND" if the insight cannot be located."""
+Respond only with timestamps in the format: START_TIME END_TIME (e.g., 00:59:10 01:02:11)"""
         
         response = self.generate_response(prompt, max_tokens=50)
         return self._parse_timestamp_response(response)
@@ -291,11 +403,22 @@ Please respond in the format: "START: [seconds] END: [seconds]" or "NOT FOUND" i
         return chunks
     
     def _parse_insights_response(self, response: str, categories: List[str]) -> Dict[str, List[str]]:
-        """Parse the insights extraction response"""
+        """Parse the insights extraction response with enhanced format handling"""
         insights = {category: [] for category in categories}
         
         try:
-            lines = response.split('\n')
+            # Look for the structured output between --- markers
+            if "---" in response:
+                # Extract content between --- markers
+                parts = response.split("---")
+                if len(parts) >= 2:
+                    content = parts[1]  # Take the middle part
+                else:
+                    content = response
+            else:
+                content = response
+            
+            lines = content.split('\n')
             current_category = None
             
             for line in lines:
@@ -303,16 +426,16 @@ Please respond in the format: "START: [seconds] END: [seconds]" or "NOT FOUND" i
                 if not line:
                     continue
                 
-                # Check if line is a category header
+                # Check if line is a category header (ends with :)
                 is_category = False
                 for category in categories:
-                    if category.lower() in line.lower() and ':' in line:
+                    if (category.lower() in line.lower() and line.endswith(':')) or line.strip() == category:
                         current_category = category
                         is_category = True
                         break
                 
-                # Check if line is an insight (starts with -)
-                if not is_category and line.startswith('-') and current_category:
+                # Check if line is an insight (starts with * or -)
+                if not is_category and (line.startswith('*') or line.startswith('-')) and current_category:
                     insight = line[1:].strip()
                     if insight:
                         insights[current_category].append(insight)

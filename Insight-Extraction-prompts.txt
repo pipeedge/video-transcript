@@ -1,0 +1,581 @@
+# Insight Extraction
+Here is the podcast transcript chunk you need to analyze:
+ 
+<transcript_chunk>
+{transcript}
+</transcript_chunk>
+ 
+You are an expert podcast analyst tasked with extracting key insights from podcast transcripts. Your goal is to provide a clear, concise, and valuable summary of the main points discussed in the podcast.
+ 
+Your task is to carefully read through this transcript and extract key insights, organizing them into the following categories:
+ 
+1. Frameworks and Exercises: Strategies, structured mental models, methods, or mental exercises mentioned for understanding or approaching situations. These should have specific names or clear structures.
+ 
+2. Points of View and Perspectives: Unique opinions, philosophies, or perspectives shared by the speakers. Focus on unpopular or particularly insightful viewpoints.
+ 
+3. Business Ideas: Specific business opportunities proposed as good ways to make money. Only include ideas explicitly presented as business opportunities.
+ 
+4. Stories and Anecdotes: Notable personal experiences or stories about others that illustrate important points or lessons.
+ 
+5. Quotes: Direct quotations from people other than the speakers, used to emphasize points or advance the conversation. Include the person being quoted and the exact words.
+ 
+6. Products: Specific products mentioned by name or with very detailed information.
+ 
+Instructions:
+1. Read the transcript carefully, identifying relevant information for each category.
+2. For each insight, create a brief title (3-5 words) and a one-sentence description. For quotes, include only the quote and the person being quoted.
+3. Ensure each insight is specific, valuable, and distinct. Avoid generic statements like "do better in school."
+4. Check that insights do not overlap across categories unless they represent truly distinct entities.
+5. Use the same language and vocabulary as the speakers in the transcript.
+6. Be thorough in your extraction, aiming to capture all relevant insights.
+ 
+Before providing your final output, wrap your extraction process inside <extraction_process> tags:
+<extraction_process>
+1. For each category, write down specific examples or quotes from the transcript that fit the category.
+2. Review each extracted insight for specificity and value. Refine or remove any that are too generic.
+3. Check for category overlap. Ensure each insight is placed in the most appropriate single category.
+4. Verify that each insight offers unique information and contributes to understanding the podcast content.
+5. Consider the context and background of the podcast to identify any nuanced insights that might not be immediately apparent.
+</extraction_process>
+ 
+After your extraction process, present your findings in the following format:
+ 
+---
+[Category Name]:
+ 
+* [Brief Title]: [One-sentence description]
+* [Another Brief Title]: [One-sentence description]
+[Continue for all insights in this category]
+ 
+[Repeat for each category]
+---
+ 
+After presenting your findings, reflect on your answer, performing sanity checks and mentioning any additional knowledge or background information which may be relevant.
+ 
+Remember to be specific, avoid overlap, and ensure each insight provides unique value to the reader.
+ 
+<examples>
+<example>
+<transcript_chunk>
+[This would be the podcast transcript, which is not provided in the prompt]
+</transcript_chunk>
+<ideal_output>
+<extraction_process>
+1. For each category, I've identified specific examples or quotes from the transcript:
+   - Quotes: Located two direct quotations from Warren Buffet and Bill Gates.
+   - Frameworks and Exercises: Identified the $10 Million Exercise.
+   - Points of View and Perspectives: Noted Nick's perspective on "enough," the discussion on money as a tool vs. measuring stick, and the importance of hosting events.
+   - Business Ideas: Extracted three distinct business opportunities mentioned.
+   - Stories and Anecdotes: Identified three notable stories shared by Nick.
+   - Products: Found two specific products mentioned.
+ 
+2. Reviewed each insight for specificity and value:
+   - Ensured each insight provides concrete information or a clear concept.
+   - Refined descriptions to capture the essence of each point succinctly.
+ 
+3. Checked for category overlap:
+   - Verified that each insight is placed in the most appropriate single category.
+   - For example, ensured that Nick's stories are under "Stories and Anecdotes" rather than "Business Ideas," even though they relate to business.
+ 
+4. Verified uniqueness of information:
+   - Confirmed that each insight offers distinct value and contributes to understanding the podcast content.
+   - Ensured no redundancy across categories.
+ 
+5. Considered context and nuance:
+   - Reflected on the overall theme of the podcast to identify less obvious insights.
+   - For instance, recognized the underlying theme of unconventional thinking in Nick's approaches to business and life.
+</extraction_process>
+ 
+---
+Quotes:
+ 
+* "I never found an investment I didn't like" - Warren Buffet
+* "We didn't do this because it was hard, we did it because we thought it was easy" - Bill Gates
+ 
+Frameworks and Exercises:
+ 
+* $10 Million Exercise: An exercise where you imagine having $10 million and list how you would live your life differently, helping to identify what truly matters to you.
+ 
+Points of View and Perspectives:
+ 
+* Determining "Enough": Nick shares a personal story about figuring out what is "enough" in life by comparing his business earnings to his investment income, leading to a reevaluation of his priorities.
+* Money as a Tool vs. Measuring Stick: Discussion on using money to improve quality of life versus using it to measure success, referencing Morgan Housel's quote.
+* Importance of Hosting Events: Nick emphasizes that interesting people want to meet other interesting people, and hosting events is a great way to facilitate this.
+ 
+Business Ideas:
+ 
+* White-Label Enterprise Sales Team: Building a sales team by recruiting and training salespeople, potentially leading to an acqui-hire by a larger company.
+* Airbnb Experiences Host: Starting a side hustle by leading tours or experiences in your city through Airbnb.
+* Geek Squad Service: Offering local tech support services like improving Wi-Fi, cleaning devices, and optimizing tech setups.
+ 
+Stories and Anecdotes:
+ 
+* Nick's Aviation Business: Leveraging SEO tactics like creating multiple websites and fake blogs to dominate search results in a niche market.
+* Museum Hack: Nick's unconventional museum tours that led to a multimillion-dollar business.
+* Equinox Pool Story: Nick manipulated SEO to indicate that a popular pool was closed for maintenance to reduce crowding.
+ 
+Products:
+ 
+* Buckwheat pillows: A product that helps people sleep better by providing support and reducing pressure points.
+* Cold Barrel: Cold plunge company that the hosts invested in.
+---
+</ideal_output>
+</example>
+</examples>
+
+
+
+
+
+
+
+
+
+
+# Title Generation
+<instructions>
+Your goal is to come up with a title for the following insight based off the transcript you've been given.
+ 
+You want the title to be short, but specific. The user should be able to look at the title and understand what the insight is about.
+ 
+Guidelines:
+- A generic title is the enemy. Use the unique verbiage of the insight to form the title.
+- Don't include 'the' in the title. For example, 'The Importance of Being Early' should just be 'Importance of Being Early'.
+- Speak in active voice. For example, 'Importance of Being Early' should be 'Being Early Is Important'.
+- Do not use adverbs. For example, 'Wealth Often Precedes Enjoyable Work' should be 'Wealth Precedes Enjoyable Work'. or 'Seamless Waymo Self-Driving Experience in San Francisco' should be 'Waymo in SF'
+- Wrap your title in <title> tags. Ex: <title>Employees Show Greatness Early</title>
+ 
+<examples>
+    <example>
+        <insight>
+Early Indicators of Greatness: Shaan posits that truly exceptional employees display remarkable abilities within their first two weeks, suggesting early performance is a strong predictor of future success.
+        </insight>
+        <title>
+Employees Show Greatness Early
+        </title>
+    </example>
+    <example>
+        <insight>
+Warren Buffett's Tight Filter Approach: Buffett's framework of being a harsh grader—quickly categorizing people as definite yeses or nos based on initial impressions to focus only on high-potential individuals.
+        </insight>
+        <title>
+Warren Buffett's Tight Filter Approach
+        </title>
+    </example>
+    <example>
+        <insight>
+"Are you a lucky person?" – Jeff Bezos' favorite interview question to gauge a candidate's optimism and self-perception.
+        </insight>
+        <title>
+Jeff Bezos' 'Lucky' Question
+        </title>
+    </example>
+    <example>
+        <insight>
+Shaan's Controversial Tweet at Twitch: Shaan describes how he faced criticism at Twitch for tweeting that great employees show their greatness within the first two weeks, sparking a discussion on onboarding and performance expectations.
+        </insight>
+        <title>
+Shaan's Controversial Tweet at Twitch
+        </title>
+    </example>
+    <example>
+        <insight>
+Gateway drug businesses are simple, low-risk enterprises that serve as an entry point for people to learn about entrepreneurship and business ownership. These businesses offer a practical way to gain experience in running a 
+        </insight>
+        <title>
+Gateway Drug Businesses
+        </title>
+    </example>
+ 
+    <example>
+        <insight>
+    Success comes from consistently executing many small actions rather than finding one big solution.
+ 
+        ## Key principles
+ 
+        * Persistence is crucial for long-term success
+        * Consistent effort over time yields results
+        * There's rarely a single "silver bullet" solution
+        * Progress comes from many small "lead bullet" actions
+        </insight>
+        <title>
+        No silver bullet, only lead bullets
+        </title>
+    </example>
+</examples>
+</instructions>
+ 
+<insight>
+{insight}
+</insight>
+
+
+
+
+
+
+# Time Stamp Extraction
+
+Your goal is to extract the start and end timestamps for when a topic is talked about. You want to identify when a topic is first talked about, then when it is done being talked about
+Only respond with the timestamps, nothing else.
+00:59:10 Sam Parr: so I mean you you you definitely do and you definitely can I think that you will eventually for sure 
+00:59:10 Steph Smith: someone by the way I read the comments and I read one from something one of the episodes I was on ages ago and someone wrote something like wow steph 00:59:30 Steph Smith: has a really intense case of imposter syndrome and I was like oh true anyway I guess if people wanna find
+00:59:30 Sam Parr: by the way I'll tell you this now you do I remember when I was negotiating your salary when you first joined and you asked for a number I don't 00:59:30 Sam Parr: remember if I did this for you it we in particular women would typically do this they would say a number and I would say a number back or I 00:59:30 Sam Parr: would just say a number to them and they would just accept it and I'll be like hey you should negotiate with me women in particular were horrible at pushing 00:59:30 Sam Parr: back on their salary for what they should ask for and you know my company was small we in aggregate probably hired 75 people but I noticed a small trend 00:59:30 Sam Parr: of women in particular did not push back nearly as hard as the men there were many men that they would push back and it was laughable what they I'm 00:59:30 Sam Parr: like there's not a chance I'm going to give you this but I guess I'll meet you somewhere in the middle to like adjust this but like this is crazy 00:59:30 Sam Parr: I offered I was thinking you are a $150,000 a year person dressed for 700,000 like that's just ridiculous but I remember with you steph you were way we gave 00:59:30 Sam Parr: you a lot of bumps I think over the how long you worked with us but you you started way too low and I would encourage you to maybe not 00:59:30 Sam Parr: for this product but to definitely elevate what you should be demanding for pay I think you're doing alright now at a 16 c but that I've noticed that with 01:00:51 Sam Parr: you in particular amongst very very very smart and qualified young women
+01:00:51 Steph Smith: yeah it took me around what is it so 21 to 28 when I 28 or 29 when I joined a 16 z so it took me like 7 years 01:01:05 Steph Smith: or so to actually learn to negotiate so I agree
+01:01:05 Shaan Puri: can I tell you of embarrassing version of impostor syndrome that I have which is it's not impostor syndrome but it is what I call michael Scott syndrome where sometimes 01:01:05 Shaan Puri: then I felt this for like 10 years I always hire people that are like super smart that's great upfront but the downside is sometimes you just feel like michael 01:01:05 Shaan Puri: Scott you're like oh I'm the idiot in the office and I'm telling these people I'm actually in their way these people are like they're kinda looking at me like 01:01:05 Shaan Puri: the way that jim halpert looks at you know michael Scott and I'm like oh no it's happening that's the the the michael Scott thing is happening have you ever 01:01:41 Shaan Puri: felt that
+01:01:41 Sam Parr: yes I felt that way all the time and then I realized that's actually I felt that way for a long time and then I realized oh wait no that 01:01:51 Sam Parr: just means I'm good at hiring so like I should just get out of the way
+01:01:57 Shaan Puri: what Scott would do he turned into a compliment for himself
+01:01:57 Sam Parr: no I felt that way too I remember hiring people that were a older than me and b smarter and I'm like what the fuck are these people did I 01:02:11 Sam Parr: really just convince this person did I just trick this person into coming and joining anything I'm doing I feel horrible about that Michael Scott syndrome is when you feel like you're the idiot in the office and you're telling these people you're actually in their way. 01:01:05 01:02:11 
+00:39:24 Steph Smith: this was forever ago I wonder what it is now but back then it was like early on in the airpod journey and it was like airpods if it was 00:39:37 Steph Smith: a stand alone company would be in the fortune 50 or something like that and I was like woah woah
+00:39:44 Sam Parr: I think your stat was like airpods make more revenue than like spotify snapchat and airbnb combined yeah
+00:39:44 Steph Smith: I think twitter was on that too it was yeah and that was again that was in 20 I wanna say 2019 or 2020 and so now there's some crazy 00:39:44 Steph Smith: stats with airpods which is just like 70% of all us teens have airpods like that is like true penetration and so early on in that trend it's like okay 00:39:44 Steph Smith: there's like cases there's I'm trying to remember like key chains really simple stuff but I think what is worth just understanding or or what you can take away from 00:39:44 Steph Smith: this gadget flow website is like okay what are the newest devices that are not gonna have the scale of like 100 or 1000 of people using them but millions 00:40:30 Steph Smith: or 100 of millions and what are the adjacent accessories or products that I can create
+00:40:33 Sam Parr: so how do you how do you use gadget flow
+00:40:33 Steph Smith: so gadget flow is not as much of like you know a searchable database like something like jungle scout but it's more so just what I would do if I 00:40:33 Steph Smith: came to this page is first I would look at the drop down of most popular right so that's where you're gonna see some of those big devices and then 00:40:33 Steph Smith: the other takeaway is some of the drop down categories I think so the one that caught my eye was pet accessories so remember gadget flow is like all tech 00:40:33 Steph Smith: devices and so if you go to pet accessories there's a bunch of different things I guess you both have owned dogs I've never owned a owned a dog but 00:41:20 Steph Smith: I wonder if you're familiar with any of these devices and in particular there was one that I noticed have you guys heard of fluent pet
+00:41:21 Sam Parr: no what's that
+00:41:22 Shaan Puri: no what is it
+00:41:22 Steph Smith: it is this really interesting trend of these buttons fluent pet is a particular brand that I think is going pretty viral because of one account this dog called I 00:41:22 Steph Smith: am bunny this this account has I think a 1000000 followers on instagram and it's it's basically these buttons where you can I don't know how like how well this 00:41:52 Steph Smith: works for all dogs but you can kind of teach them to communicate with you by pushing these buttons to indicate what they want
+00:41:52 Sam Parr: and I've seen these and and it's and and it is actually really cool so the way it looks is it looks like a so it looks like a imagine 00:41:52 Sam Parr: like a like a twister pad and each color has a button on it and the one button means bathroom one button means food one button means other thing and 00:42:15 Sam Parr: you could train your dog to click a button to do what to tell you what they want it it's actually really
+00:42:16 Shaan Puri: cool
+00:42:16 Sam Parr: yeah it's pretty awesome I've seen these and I Gadget flow website is a website that shows you the newest devices that are not gonna have the scale of like 100 or 1000 of people using them but millions 00:39:44 00:41:20
+
+
+
+
+# Make Framework Content
+Your goal is to extract a concise but detailed framework about a topic given a transcript from a podcast. Below you will get a transcript from a user and you want to literally just repeat what the speaker said but in structured markdown.
+ 
+Guidelines
+* Remove the fluff - don't pad the text with extra information, only use dense information directly from the transcript
+* Bullet points - Use bullet points to describe the key pieces of information
+* Use a mix of parent bullets that stand on their own and then bullets that have children when needed
+* Start with a mini summary about what the page is about. Keep it short and factual
+* Image you are trying to repeat the speaker said but in a more structured and concise way. Use their wording and style.
+* Don't start with a title like "Elon Musk's hiring process", just get into the topic summary
+ 
+ 
+<example>
+<topic>Elon Musk's hiring process</topic>
+<raw_transcript>
+another part that you write about with
+the Three Musketeers and the whole
+engineering the firing and the bringing
+in the engineers to try to sort of go
+hardcore so there's a lot of interesting
+sort of questions to ask there but the
+high level can you just comment about
+that
+part of the Saga which is
+bringing in the engineers and seeing
+like what can we do here right he
+Elon Musks hiring process
+brought in the engineers and figured
+that the amount of people doing Tesla
+full self-driving autopilot and all the
+software there was about one tenth of
+what was doing software for Twitter and
+he said this can't be the case
+and he fired 85 percent in three
+different rounds the first was
+just firing people because they looked
+at the coding and they had a team of
+people from Tesla's autopilot team
+grading the codes of ever of all that
+was written in the past year or so
+then he fired people you know who didn't
+seem to be totally all in or loyal and
+then another round of layoffs so
+uh
+at each step of the way almost everybody
+says that's enough it's going to destroy
+things yeah uh from Alex Sparrow his
+lawyer to Jared virtual he's like whoa
+whoa whoa you know and even Andrew and
+James the young cousins who are tasked
+with making a list and figuring out
+who's good or bad same we've done enough
+we're going to be in real trouble
+and they were partly right I mean there
+was degradation of the service some
+but not as much as half the services I
+use half the time you know and
+I wake up each morning and
+hit the app and okay still there what do
+you think was that too much I think that
+Elons algorithm
+he has an algorithm that we mentioned
+earlier that begins with question every
+requirement what it's up to is delete
+delete delete
+every point and then a corollary to that
+is if you don't end up adding back 20 of
+what you deleted then you didn't delete
+enough in the first round because you
+were too timid well so you asked me did
+he overdo it he probably overdid it by
+20 which is his formula and they're
+probably trying to hire people now to
+keep things going
+but it sends a strong signal
+to people that are hired back or the
+people that are still there the the API
+and what Steve Jobs and many other great
+leaders felt and certainly Bezos and
+certainly
+in the early days of Microsoft Bill
+Gates he was Hardcore only a players
+so how much of Elon success would you
+say elon's and uh Steve Jobs's success
+is the hiring and managing of great
+teams when I asked Steve Jobs at one
+point what was the best product you ever
+created
+I thought he'd say maybe the Macintosh
+or maybe the iPhone
+he said no those products are hard the
+best thing I ever created was the team
+that made those products and that's the
+hard part is creating a team and he did
+you know from Johnny Ive to Tim Cook and
+at EQ and Phil Schiller
+Elons team
+Elon has done a good job bringing in
+people Glenn Shotwell obviously
+Linda yagarino she's you know can
+navigate through the current crises
+uh certainly
+Stellar people at SpaceX like Martin
+Cosa and then at Tesla like Drew
+backlino and Lars maravi and Tom Zhu and
+many others
+Benjamin Franklin
+um he's not as much of a team
+collaborator essay Benjamin Franklin who
+by the way that's the best team ever
+created which is the founders and you
+had to have really smart people like
+Jefferson and Madison and really
+passionate people like John Adams and
+his cousin Samuel and really a guy of
+high rectitude like Washington but you
+also needed a Ben Franklin who could
+bring everybody together and Forge A
+team out of them and make them
+compromise with each other
+musk is a magnet for awesome Talent
+Hiring priorities
+magnet interesting but there's the
+there's like the priorities of hiring of
+um
+based on Excellence trustworthiness and
+drive these are things you've described
+throughout the book I mean there there's
+a pretty
+uh concrete and rigorous
+set of ideas based on which the hiring
+is done oh yeah and he has a very good
+Spidey uh intuitive sense just looking
+at people
+who could maybe not looking at them but
+studying them who could be good one of
+his uh uh
+ways of operating
+is what he calls a skip level meeting
+and let's take a very specific thing
+like the Raptor engine which is powering
+the um Starship and it wasn't going well
+it looked like a spaghetti Bush and it
+was going to be hard to manufacture and
+he got rid of the people
+who were in charge of that team and now
+remember that he spent a couple of
+months doing what he called skip level
+which means instead of meeting with his
+direct reports on the Raptor team he
+would meet with the people one level
+below them and so he would skip a level
+and meet with them and he said this is
+and I just asked him what they're doing
+and I drill them with questions and he
+said this is how I figure out who's
+going to emerge he said it was
+particularly difficult I was sitting in
+those meetings because people were
+wearing masks it was doing the height of
+covid uh and he said it made it a little
+bit harder for him because he has to get
+the input but I watched as a young kid
+dreadlocks named Jacob McKenzie he's in
+the book
+is sitting there and he's a bit like you
+engineering mindset speaks in a bit of a
+monotone musk would ask a question and
+he would give an answer and the answer
+would be very straightforward and he
+didn't you know get rattled he was like
+this
+it must said one day called him up at
+three well I won't say 3 A.M but after
+midnight said you still around yeah Jake
+said yeah I'm still at work and he said
+okay I'm Gonna Make You in charge of the
+team building Raptor
+and that was like a big surprise but
+Jacob McKenzie has now gotten a version
+of raptor and when they're building him
+at least one a week and they're pretty
+awesome and
+um that's where his talent must Talent
+for
+finding the right person and promoting
+them that's where it is and promoting it
+in a way where it's like here's the ball
+here catch yeah yeah and you run with it
+I have I've interacted with quite a few
+uh folks from even just the model X the
+the all throughout where people you know
+on paper don't seem like they would be
+able to run the thing and they run it
+extremely successfully and he does it
+Brian Dow
+wrong sometimes he's had a horrible
+track record with the solo roof division
+wonderful guy named Brian Dow I really
+liked him uh and when they were doing
+the battery Factory surge in Nevada
+uh musk got rid of two or three people
+and there's Brian Dow can do can do can
+do stays up all night and he gets
+promoted and runs it and so finally goes
+uh musk goes through two or three people
+running the solo roof division finally
+calls up Brian down I was sitting in
+Moss house in Boca Chica that little
+tiny two-bedroom he has and he offers
+Brian Dow the job of running solar roof
+and you know buying their okay can do
+can do and two or three times musk
+insisted that they put install a solo
+roof in one of those houses in Boca
+Chica this is this tiny village at the
+south end of Texas
+and late at night I mean I'd have to
+climb up to the top of the roof on these
+ladders and stand on this peaked roof as
+musk is there saying why do we need four
+screws to put in this single leg and and
+Brian was just sweating and doing
+everything but then after a couple of
+months it wasn't going well and boom
+uh musk just fired him
+so I always try to learn what is it that
+makes those who stay thrive
+what's the lesson there what do you
+think well I think it's self-knowledge
+like an Andy Krebs or others they say uh
+I am hardcore I really want to get a
+rocket to Mars and that's more important
+than anything else
+uh one of the people I think it's I
+think it's Tim Zaman I hope uh when he
+hears this I'm getting him the right
+person who you know took time it was
+working for Tesla autopilot and it was
+just so intense he took some time off
+and and then went to another company he
+said I was burned out at Tesla but then
+I was bored at the next place so I
+called I think it was Ashok it I said
+can I come back he said sure he said
+I've learned about myself I'd rather be
+burned out than born that's a good line
+um well can you just uh Linger on one of
+the three that seemed interesting to you
+in in terms of Excellence
+trustworthiness and drive which one do
+you think is is the most important and
+the hardest to get at the
+trustworthiness is an interesting one
+like are you ride or die kind of thing
+The Musketeers
+yeah I think that especially when it
+came to taking over Twitter he thought
+half the people there were disloyal and
+he was wrong about two-thirds were
+disloyal not just that
+and it was how do we weed out those and
+he did something and made um the firing
+squad I call it or the Musketeers I
+think is my nickname for them which is
+you know the young cousins and two or
+three other people he made them look at
+the slack messages these people had post
+everybody at Twitter and posted and they
+went through hundreds of slack messages
+so if anybody
+posted on the internal Slack
+you know that jerk Elon Musk is going to
+take over and I'm afraid that he's a
+maniac or something
+they would be on the list because they
+want all in loyal uh they did not look
+at private slack messages and I guess
+people who are posting on a corporate
+slack board should be aware that your
+company can look at them but that's more
+than I would have done or most people
+would have done
+and so that was to figure out who's
+deeply committed and loyal I think that
+was mainly the case at Twitter he
+doesn't sit around it SpaceX saying
+who's loyal to me at
+um other places
+it's excellent but that's pretty well a
+given everybody is like a mark jankosa
+just whip smart it's all you hardcore
+and all in especially if you have to
+move to this spit of a town in the South
+Tip of Texas called Boca Chica
+you know you got to be all in yeah yeah
+and that's the drive the the last piece
+</raw_transcript>
+<FrameWork>
+Elon has a strict hiring process to filter out the best employees he can. Here's his secret.
+ 
+## Elon's hiring and team-building philosophy
+ 
+* Follows a "delete, delete, delete" algorithm for requirements
+* Aims to rehire only 20% of deleted positions
+* Focuses on hiring only "A players"
+* Emphasizes the importance of a "hardcore" work culture
+ 
+## Key hiring priorities
+ 
+1. Excellence in skills and abilities
+    * Focuses on exceptional technical skills and problem-solving abilities
+    * Values creative thinking and the ability to challenge conventions
+2. Trustworthiness and loyalty
+    * Employees committed to the company's mission
+    * Emphasizes the importance of being "all in" on projects
+3. Drive and commitment to the mission
+    * Looks for self-motivated individuals who actually care about their work
+    * Prefers those who can handle intense, high-pressure environments
+4. Adaptability and resilience
+    * Values employees who thrive in fast-paced, changing environments
+    * People who can bounce back from setbacks and continue pushing forward
+5. Cultural fit for a "hardcore" work ethic
+    * Prioritizes people who align with Musk's intense work culture
+    * Willing to work long hours and make personal sacrifices for company goals
+ 
+## How Elon identifies talent
+ 
+* Uses "skip-level" meetings to evaluate potential leaders
+* Meets with employees one level below direct reports
+* Asks direct questions and observes responses to assess capabilities
+* Relies on intuition and direct questioning to assess candidates
+* Promotes based on demonstrated ability, often unexpectedly
+* Gives challenging assignments to test and develop talent
+* Observes how individuals handle pressure and solve problems in real-time
+* Values direct communication and straightforward answers
+</FrameWork>
+</example>

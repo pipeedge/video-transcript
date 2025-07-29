@@ -14,15 +14,21 @@ sys.path.append(str(Path(__file__).parent / "src"))
 from src.main import PodcastAnalyzer
 
 
-async def process_channel(channel_url: str, max_videos: int = None):
+async def process_channel(channel_url: str, max_videos: int = None, use_direct_transcripts: bool = False):
     """Process a YouTube channel"""
+    method = "direct transcript extraction" if use_direct_transcripts else "audio download + transcription"
     print(f"Processing channel: {channel_url}")
     print(f"Max videos: {max_videos if max_videos else 'All'}")
+    print(f"Method: {method}")
     
     analyzer = PodcastAnalyzer()
-    episodes = await analyzer.process_channel(channel_url, max_videos)
     
-    print(f"\n✅ Successfully processed {len(episodes)} episodes")
+    if use_direct_transcripts:
+        episodes = await analyzer.process_channel_direct_transcripts(channel_url, max_videos)
+        print(f"\n✅ Successfully processed {len(episodes)} episodes using direct transcript extraction")
+    else:
+        episodes = await analyzer.process_channel(channel_url, max_videos)
+        print(f"\n✅ Successfully processed {len(episodes)} episodes using audio transcription")
     
     # Show some stats
     total_insights = sum(len(ep.insights) for ep in episodes)
@@ -56,6 +62,8 @@ def main():
     process_parser = subparsers.add_parser("process", help="Process a YouTube channel")
     process_parser.add_argument("channel_url", help="YouTube channel URL")
     process_parser.add_argument("--max-videos", type=int, help="Maximum number of videos to process")
+    process_parser.add_argument("--direct-transcripts", action="store_true", 
+                               help="Use direct transcript extraction (no audio download required)")
     
     # API command
     api_parser = subparsers.add_parser("api", help="Run the API server")
@@ -70,7 +78,7 @@ def main():
     args = parser.parse_args()
     
     if args.command == "process":
-        asyncio.run(process_channel(args.channel_url, args.max_videos))
+        asyncio.run(process_channel(args.channel_url, args.max_videos, args.direct_transcripts))
     
     elif args.command == "api":
         run_api()
