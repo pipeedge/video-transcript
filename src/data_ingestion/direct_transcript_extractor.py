@@ -270,6 +270,12 @@ class DirectTranscriptExtractor:
             'no_download': True,
             'playlistend': max_videos if max_videos else 20,  # Reasonable default limit
             'retries': 3,
+            'skip': [
+                'dashsegments',
+                'live',
+                'upcoming',
+            ],
+            'match_filter': '!is_live & !is_upcoming',
         }
         
         try:
