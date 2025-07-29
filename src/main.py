@@ -32,8 +32,16 @@ class PodcastAnalyzer:
     
     def __init__(self):
         self.downloader = YouTubeDownloader()
-        # Use Whisper by default for open-source transcription
-        self.transcriber = TranscriptionService(prefer_whisper=USE_WHISPER, whisper_model=WHISPER_MODEL)
+        
+        # Initialize transcription service (optional for Python 3.13)
+        try:
+            self.transcriber = TranscriptionService(prefer_whisper=USE_WHISPER, whisper_model=WHISPER_MODEL)
+            self.transcription_available = True
+        except ImportError as e:
+            logger.warning(f"Transcription service not available: {e}")
+            self.transcriber = None
+            self.transcription_available = False
+        
         # Direct transcript extractor (no audio download required)
         self.direct_extractor = DirectTranscriptExtractor()
         self.llm_service = LLMService()
@@ -146,7 +154,11 @@ class PodcastAnalyzer:
         logger.info(f"Processing video: {video_info.title}")
         
         try:
-            # Step 2: Transcribe audio
+            # Step 2: Transcribe audio (if transcription service available)
+            if not self.transcription_available:
+                logger.error("Transcription service not available - use direct transcript extraction instead")
+                return None
+                
             logger.info("Starting transcription...")
             raw_transcript = self.transcriber.transcribe_audio(audio_path, video_info.video_id)
             
