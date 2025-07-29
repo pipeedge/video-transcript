@@ -37,3 +37,7 @@ pandas==2.2.2
 numpy==1.26.4
 
 youtube-transcript-api==1.6.2
+pytube
+yt_dlp
+pydub
+pyaudioop

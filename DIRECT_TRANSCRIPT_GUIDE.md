@@ -54,15 +54,19 @@ The system tries multiple methods in order of preference:
 - Accesses YouTube's official transcript data
 - Prefers manual transcripts over auto-generated
 - Includes precise timestamps
+- Often blocked by YouTube's anti-bot measures
+- Limited by YouTube's access policies
 - **Fastest and most reliable**
 
 ### 2. **yt-dlp Manual Subtitles** (Fallback)
 - Downloads official subtitles using yt-dlp
 - Good quality when available
 - Includes timing information
+- Not available for all videos
+- Bypasses many access restrictions
 
 ### 3. **yt-dlp Auto Subtitles** (Last Resort)
-- Downloads auto-generated subtitles
+- Uses YouTube's auto-generated captions
 - Lower quality but widely available
 - Better than nothing when manual transcripts unavailable
 
