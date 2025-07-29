@@ -79,8 +79,6 @@ class DirectTranscriptExtractor:
             segments = []
             for i, entry in enumerate(transcript_data):
                 segment = TranscriptSegment(
-                    segment_id=f"{video_info.video_id}_{i}",
-                    video_id=video_info.video_id,
                     start_time=entry.get('start', 0),
                     end_time=entry.get('start', 0) + entry.get('duration', 0),
                     text=entry.get('text', '').strip(),
@@ -178,8 +176,6 @@ class DirectTranscriptExtractor:
                 
                 if clean_text:
                     segment = TranscriptSegment(
-                        segment_id=f"{video_id}_{i}",
-                        video_id=video_id,
                         start_time=start_seconds,
                         end_time=end_seconds,
                         text=clean_text,
@@ -222,7 +218,6 @@ class DirectTranscriptExtractor:
                 'extracted_at': datetime.now().isoformat(),
                 'segments': [
                     {
-                        'segment_id': seg.segment_id,
                         'start_time': seg.start_time,
                         'end_time': seg.end_time,
                         'text': seg.text,

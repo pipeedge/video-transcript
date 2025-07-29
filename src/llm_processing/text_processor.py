@@ -27,7 +27,7 @@ class TextProcessor:
     
     def process_transcript_segments(self, segments: List[TranscriptSegment]) -> List[CleanedSegment]:
         """
-        Clean and format transcript segments
+        Clean and format transcript segments (optimized for batch processing)
         
         Args:
             segments: List of raw transcript segments
@@ -36,6 +36,49 @@ class TextProcessor:
             List of cleaned segments with titles
         """
         logger.info(f"Processing {len(segments)} transcript segments")
+        
+        # For direct transcripts (which are usually already clean), use a faster approach
+        if len(segments) > 50:  # Likely from direct transcript extraction
+            logger.info("Using optimized processing for large transcript (direct extraction)")
+            return self._process_segments_optimized(segments)
+        else:
+            # Use original detailed processing for smaller/audio transcripts
+            logger.info("Using detailed processing for audio transcript")
+            return self._process_segments_detailed(segments)
+    
+    def _process_segments_optimized(self, segments: List[TranscriptSegment]) -> List[CleanedSegment]:
+        """Fast processing for direct transcripts that are already mostly clean"""
+        cleaned_segments = []
+        
+        # Group segments into larger chunks for batch processing
+        batch_size = 10
+        for i in range(0, len(segments), batch_size):
+            batch = segments[i:i+batch_size]
+            logger.info(f"Processing batch {i//batch_size + 1}/{(len(segments) + batch_size - 1)//batch_size}")
+            
+            for j, segment in enumerate(batch):
+                # For direct transcripts, minimal cleaning needed
+                cleaned_text = segment.text.strip()
+                
+                # Simple title generation based on first few words
+                words = cleaned_text.split()[:6]
+                title = " ".join(words) + ("..." if len(words) == 6 else "")
+                
+                cleaned_segment = CleanedSegment(
+                    original_text=segment.text,
+                    cleaned_text=cleaned_text,
+                    title=title,
+                    start_time=segment.start_time,
+                    end_time=segment.end_time,
+                    speaker=segment.speaker
+                )
+                cleaned_segments.append(cleaned_segment)
+        
+        logger.info(f"Completed optimized processing of {len(cleaned_segments)} segments")
+        return cleaned_segments
+    
+    def _process_segments_detailed(self, segments: List[TranscriptSegment]) -> List[CleanedSegment]:
+        """Detailed processing for audio transcripts that need more cleaning"""
         cleaned_segments = []
         
         for i, segment in enumerate(segments):
