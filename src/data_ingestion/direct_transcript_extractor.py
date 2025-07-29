@@ -39,6 +39,15 @@ class DirectTranscriptExtractor:
         """
         logger.info(f"Attempting to extract transcript for: {video_info.title}")
         
+        # Check if this is a live/upcoming video that should be skipped
+        title_lower = video_info.title.lower()
+        if ('live' in title_lower or 
+            'upcoming' in title_lower or 
+            video_info.duration is None or
+            video_info.duration == 0):
+            logger.info(f"⏭️  Skipping live/upcoming video: {video_info.title}")
+            return None
+        
         # Try multiple extraction methods in order of preference
         # Note: Prioritizing yt-dlp methods due to YouTube Transcript API compatibility issues
         methods = [
@@ -306,6 +315,19 @@ class DirectTranscriptExtractor:
                                 # Validate video ID (YouTube video IDs are 11 characters)
                                 if not video_id or len(video_id) != 11:
                                     logger.warning(f"Invalid video ID length ({len(video_id)}): {video_id}")
+                                    return
+                                
+                                # Skip live/upcoming videos (check various indicators)
+                                title = entry.get('title', '').lower()
+                                is_live = entry.get('is_live', False)
+                                live_status = entry.get('live_status', '')
+                                
+                                if (is_live or 
+                                    live_status in ['is_upcoming', 'is_live'] or
+                                    'live' in title or 
+                                    'upcoming' in title or
+                                    entry.get('duration') is None):  # Live videos often have no duration
+                                    logger.info(f"⏭️  Skipping live/upcoming video: {title}")
                                     return
                                 
                                 # Create VideoInfo from entry
