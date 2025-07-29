@@ -252,6 +252,88 @@ class DirectTranscriptExtractor:
         except Exception as e:
             logger.error(f"Error saving transcript: {e}")
     
+    def _get_channel_videos_direct(self, channel_url: str, max_videos: Optional[int] = None) -> List[VideoInfo]:
+        """
+        Get channel videos using a simpler approach optimized for transcript extraction
+        """
+        videos = []
+        
+        # Simple yt-dlp configuration focused on getting video metadata
+        ydl_opts = {
+            'quiet': False,  # Show more info for debugging
+            'extract_flat': False,  # Get full video info
+            'ignoreerrors': True,
+            'no_download': True,
+            'playlistend': max_videos if max_videos else 20,  # Reasonable default limit
+            'retries': 3,
+        }
+        
+        try:
+            logger.info(f"Getting channel videos directly for transcript extraction: {channel_url}")
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(channel_url, download=False)
+                
+                if not info:
+                    logger.error("No channel info extracted")
+                    return []
+                
+                # Handle both single videos and playlists/channels
+                if 'entries' in info:
+                    entries = info['entries']
+                    logger.info(f"Found {len(entries)} entries in channel")
+                    
+                    for i, entry in enumerate(entries):
+                        if not entry:
+                            continue
+                            
+                        # Skip if we've reached max_videos
+                        if max_videos and len(videos) >= max_videos:
+                            break
+                            
+                        try:
+                            # Create VideoInfo from entry
+                            video_info = VideoInfo(
+                                video_id=entry.get('id', ''),
+                                title=entry.get('title', ''),
+                                description=entry.get('description', ''),
+                                url=entry.get('webpage_url', f"https://www.youtube.com/watch?v={entry.get('id', '')}"),
+                                duration=entry.get('duration'),
+                                publish_date=datetime.fromtimestamp(entry.get('timestamp', 0)) if entry.get('timestamp') else None,
+                                thumbnail_url=entry.get('thumbnail')
+                            )
+                            
+                            # Validate video ID
+                            if video_info.video_id and len(video_info.video_id) == 11:
+                                videos.append(video_info)
+                                logger.info(f"Added video {len(videos)}: {video_info.title}")
+                            else:
+                                logger.warning(f"Skipping entry with invalid video ID: {entry.get('id', 'unknown')}")
+                                
+                        except Exception as e:
+                            logger.warning(f"Error processing entry {i}: {e}")
+                            continue
+                else:
+                    # Single video
+                    if info.get('id'):
+                        video_info = VideoInfo(
+                            video_id=info['id'],
+                            title=info.get('title', ''),
+                            description=info.get('description', ''),
+                            url=info.get('webpage_url', channel_url),
+                            duration=info.get('duration'),
+                            publish_date=datetime.fromtimestamp(info.get('timestamp', 0)) if info.get('timestamp') else None,
+                            thumbnail_url=info.get('thumbnail')
+                        )
+                        videos.append(video_info)
+                        logger.info(f"Added single video: {video_info.title}")
+                
+        except Exception as e:
+            logger.error(f"Error extracting channel videos: {e}")
+            
+        logger.info(f"Successfully discovered {len(videos)} videos for transcript extraction")
+        return videos
+    
     def process_channel_transcripts(self, channel_url: str, max_videos: Optional[int] = None) -> List[tuple[VideoInfo, List[TranscriptSegment]]]:
         """
         Extract transcripts from all videos in a channel
@@ -263,11 +345,12 @@ class DirectTranscriptExtractor:
         Returns:
             List of tuples (VideoInfo, transcript_segments)
         """
-        from .youtube_downloader import YouTubeDownloader
+        # Get video list using our direct method (doesn't rely on audio download logic)
+        videos = self._get_channel_videos_direct(channel_url, max_videos)
         
-        # Get video list using existing downloader
-        downloader = YouTubeDownloader()
-        videos = downloader.get_channel_videos(channel_url, max_videos)
+        if not videos:
+            logger.error(f"No videos found in channel: {channel_url}")
+            return []
         
         results = []
         for video_info in videos:
