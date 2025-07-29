@@ -237,6 +237,9 @@ class PodcastAnalyzer:
             )
             logger.info(f"Extracted {len(insights)} insights")
             
+            # Save insights to disk
+            self._save_insights(video_info, insights)
+            
             # Create episode object
             episode = Episode(
                 video_info=video_info,
