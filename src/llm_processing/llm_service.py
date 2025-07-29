@@ -58,24 +58,35 @@ class LLMService:
                     self.tokenizer.pad_token = self.tokenizer.eos_token
                 
                 # Load model with appropriate configuration for available hardware
-                model_kwargs = {
-                    "torch_dtype": torch.float16 if self.device == "cuda" else torch.float32,
-                    "device_map": "auto" if self.device == "cuda" else None,
-                    "low_cpu_mem_usage": True,
-                    "trust_remote_code": True
-                }
+                if self.device == "cuda":
+                    model_kwargs = {
+                        "torch_dtype": torch.float16,
+                        "device_map": "auto",
+                        "low_cpu_mem_usage": True,
+                        "trust_remote_code": True
+                    }
+                else:
+                    model_kwargs = {
+                        "torch_dtype": torch.float32,
+                        "low_cpu_mem_usage": True,
+                        "trust_remote_code": True
+                    }
                 
                 self.model = AutoModelForCausalLM.from_pretrained(
                     model_name, 
                     **model_kwargs
                 )
                 
+                # Move model to device if not using device_map
+                if self.device != "cuda":
+                    self.model = self.model.to(self.device)
+                
                 # Create text generation pipeline
                 self.pipeline = pipeline(
                     "text-generation",
                     model=self.model,
                     tokenizer=self.tokenizer,
-                    device_map="auto" if self.device == "cuda" else None,
+                    device=0 if self.device == "cuda" else -1,  # Use explicit device instead of device_map
                     do_sample=True,
                     temperature=0.1,
                     max_new_tokens=512,

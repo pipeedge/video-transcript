@@ -52,9 +52,11 @@ class TextProcessor:
         
         # Group segments into larger chunks for batch processing
         batch_size = 10
+        total_batches = (len(segments) + batch_size - 1) // batch_size
         for i in range(0, len(segments), batch_size):
             batch = segments[i:i+batch_size]
-            logger.info(f"Processing batch {i//batch_size + 1}/{(len(segments) + batch_size - 1)//batch_size}")
+            current_batch = i//batch_size + 1
+            logger.info(f"📝 Processing batch {current_batch}/{total_batches} ({len(batch)} segments)")
             
             for j, segment in enumerate(batch):
                 # For direct transcripts, minimal cleaning needed
@@ -129,18 +131,21 @@ class TextProcessor:
         Returns:
             List of extracted insights
         """
-        logger.info(f"Extracting insights from {len(cleaned_segments)} segments")
+        logger.info(f"🧠 Extracting insights from {len(cleaned_segments)} segments")
         
         # Combine all cleaned text
         full_text = " ".join([segment.cleaned_text for segment in cleaned_segments])
+        logger.info(f"📄 Combined transcript: {len(full_text)} characters")
         
         # Split into chunks for processing
         chunks = self.llm.chunk_text(full_text, CHUNK_SIZE, CHUNK_OVERLAP)
-        logger.info(f"Split text into {len(chunks)} chunks for processing")
+        logger.info(f"📝 Split into {len(chunks)} chunks for LLM processing")
         
         all_insights = []
         
         # Process chunks in parallel for efficiency
+        logger.info(f"🔄 Processing {len(chunks)} chunks in parallel...")
+        processed_chunks = 0
         with ThreadPoolExecutor(max_workers=3) as executor:
             future_to_chunk = {
                 executor.submit(self._process_chunk, chunk, video_id): chunk 
@@ -149,12 +154,13 @@ class TextProcessor:
             
             for future in as_completed(future_to_chunk):
                 chunk = future_to_chunk[future]
+                processed_chunks += 1
                 try:
                     chunk_insights = future.result()
                     all_insights.extend(chunk_insights)
-                    logger.info(f"Extracted {len(chunk_insights)} insights from chunk")
+                    logger.info(f"📊 Chunk {processed_chunks}/{len(chunks)}: extracted {len(chunk_insights)} insights")
                 except Exception as e:
-                    logger.error(f"Error processing chunk: {e}")
+                    logger.error(f"❌ Error processing chunk {processed_chunks}/{len(chunks)}: {e}")
         
         # Deduplicate insights
         deduplicated_insights = self._deduplicate_insights(all_insights)

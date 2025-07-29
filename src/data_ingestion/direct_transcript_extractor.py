@@ -47,13 +47,13 @@ class DirectTranscriptExtractor:
             ("YouTube Transcript API", self._extract_with_youtube_transcript_api),
         ]
         
-        for method_name, method_func in methods:
+        for i, (method_name, method_func) in enumerate(methods):
             try:
-                logger.info(f"Trying {method_name} for {video_info.video_id}")
+                logger.info(f"🔄 Trying {method_name} for {video_info.video_id} (method {i+1}/{len(methods)})")
                 segments = method_func(video_info)
                 
                 if segments:
-                    logger.info(f"✅ Successfully extracted transcript using {method_name}")
+                    logger.info(f"✅ Success! Extracted {len(segments)} segments using {method_name}")
                     self._save_transcript(video_info, segments, method_name)
                     return segments
                 else:
@@ -224,7 +224,7 @@ class DirectTranscriptExtractor:
             transcript_data = {
                 'video_id': video_info.video_id,
                 'title': video_info.title,
-                'url': video_info.url,
+                'url': str(video_info.url),  # Convert Pydantic URL to string for JSON serialization
                 'extraction_method': method,
                 'extracted_at': datetime.now().isoformat(),
                 'segments': [
