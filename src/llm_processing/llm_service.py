@@ -57,36 +57,28 @@ class LLMService:
                 if self.tokenizer.pad_token is None:
                     self.tokenizer.pad_token = self.tokenizer.eos_token
                 
-                # Load model with appropriate configuration for available hardware
-                if self.device == "cuda":
-                    model_kwargs = {
-                        "torch_dtype": torch.float16,
-                        "device_map": "auto",
-                        "low_cpu_mem_usage": True,
-                        "trust_remote_code": True
-                    }
-                else:
-                    model_kwargs = {
-                        "torch_dtype": torch.float32,
-                        "low_cpu_mem_usage": True,
-                        "trust_remote_code": True
-                    }
+                # Load model with simple configuration (avoid accelerate conflicts)
+                model_kwargs = {
+                    "torch_dtype": torch.float32,  # Use float32 for stability
+                    "low_cpu_mem_usage": True,
+                    "trust_remote_code": True
+                    # Removed device_map to avoid accelerate conflicts
+                }
                 
                 self.model = AutoModelForCausalLM.from_pretrained(
                     model_name, 
                     **model_kwargs
                 )
                 
-                # Move model to device if not using device_map
-                if self.device != "cuda":
-                    self.model = self.model.to(self.device)
+                # Move model to device manually (since we're not using device_map)
+                self.model = self.model.to(self.device)
                 
-                # Create text generation pipeline
+                # Create text generation pipeline with explicit device
                 self.pipeline = pipeline(
                     "text-generation",
                     model=self.model,
                     tokenizer=self.tokenizer,
-                    device=0 if self.device == "cuda" else -1,  # Use explicit device instead of device_map
+                    device=0 if self.device == "cuda" else -1,
                     do_sample=True,
                     temperature=0.1,
                     max_new_tokens=512,
