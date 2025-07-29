@@ -271,6 +271,54 @@ class PodcastAnalyzer:
     def get_stats(self) -> dict:
         """Get processing and search statistics"""
         return self.search_service.get_stats()
+    
+    def _save_insights(self, video_info: VideoInfo, insights: List) -> None:
+        """Save insights to disk for later access"""
+        try:
+            from pathlib import Path
+            import json
+            from datetime import datetime
+            
+            # Create processed directory if it doesn't exist
+            processed_dir = Path("data/processed")
+            processed_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Create insights file
+            insights_file = processed_dir / f"{video_info.video_id}_insights.json"
+            
+            # Convert insights to serializable format
+            insights_data = []
+            for insight in insights:
+                insight_dict = {
+                    'title': insight.title,
+                    'content': insight.content,
+                    'category': insight.category,
+                    'quote': insight.quote,
+                    'start_time': insight.start_time,
+                    'end_time': insight.end_time,
+                    'confidence': insight.confidence,
+                    'tags': insight.tags or []
+                }
+                insights_data.append(insight_dict)
+            
+            # Create complete insights document
+            insights_doc = {
+                'video_id': video_info.video_id,
+                'title': video_info.title,
+                'url': str(video_info.url),
+                'insights_count': len(insights),
+                'extracted_at': datetime.now().isoformat(),
+                'insights': insights_data
+            }
+            
+            # Save to file
+            with open(insights_file, 'w') as f:
+                json.dump(insights_doc, f, indent=2)
+            
+            logger.info(f"💾 Saved {len(insights)} insights to: {insights_file}")
+            
+        except Exception as e:
+            logger.error(f"Error saving insights: {e}")
 
 
 async def main():
