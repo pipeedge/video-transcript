@@ -10,6 +10,7 @@ try:
     from youtube_transcript_api.formatters import TextFormatter, JSONFormatter
     YOUTUBE_TRANSCRIPT_AVAILABLE = True
 except ImportError:
+    YouTubeTranscriptApi = None
     YOUTUBE_TRANSCRIPT_AVAILABLE = False
 
 import yt_dlp
@@ -66,31 +67,13 @@ class DirectTranscriptExtractor:
     
     def _extract_with_youtube_transcript_api(self, video_info: VideoInfo) -> Optional[List[TranscriptSegment]]:
         """Extract transcript using YouTube Transcript API"""
-        if not YOUTUBE_TRANSCRIPT_AVAILABLE:
+        if not YOUTUBE_TRANSCRIPT_AVAILABLE or YouTubeTranscriptApi is None:
             raise ImportError("youtube-transcript-api not installed")
         
         try:
-            # Try to get transcript in English first, then any available language
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_info.video_id)
-            
-            # Prefer manual transcripts over auto-generated
-            transcript = None
-            try:
-                transcript = transcript_list.find_manually_created_transcript(['en'])
-            except:
-                try:
-                    transcript = transcript_list.find_generated_transcript(['en'])
-                except:
-                    # Get any available transcript
-                    available_transcripts = list(transcript_list)
-                    if available_transcripts:
-                        transcript = available_transcripts[0]
-            
-            if not transcript:
-                return None
-            
-            # Fetch the transcript data
-            transcript_data = transcript.fetch()
+            # Use the correct API pattern - instantiate and call fetch
+            api = YouTubeTranscriptApi()
+            transcript_data = api.fetch(video_info.video_id)
             
             # Convert to TranscriptSegment objects
             segments = []
@@ -124,8 +107,11 @@ class DirectTranscriptExtractor:
         }
         
         try:
+            # Convert URL to string if it's a Pydantic URL object
+            url_str = str(video_info.url) if video_info.url else f"https://www.youtube.com/watch?v={video_info.video_id}"
+            
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([video_info.url])
+                ydl.download([url_str])
             
             # Look for the downloaded subtitle file
             subtitle_file = self.transcripts_dir / f"{video_info.video_id}.en.vtt"
@@ -151,8 +137,11 @@ class DirectTranscriptExtractor:
         }
         
         try:
+            # Convert URL to string if it's a Pydantic URL object
+            url_str = str(video_info.url) if video_info.url else f"https://www.youtube.com/watch?v={video_info.video_id}"
+            
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([video_info.url])
+                ydl.download([url_str])
             
             # Look for the downloaded subtitle file
             subtitle_file = self.transcripts_dir / f"{video_info.video_id}.en.vtt"
